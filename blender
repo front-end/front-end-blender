@@ -1,0 +1,183 @@
+#!/usr/bin/env ruby
+# == Synopsis 
+#   Blender is like Make or Ant for the front-end. It aggregates and compresses
+#   CSS and/or JavaScript assets of a site into production-ready files.
+#
+# == Examples
+#   In your site directory run blender to minify CSS and JavaScript.
+#     blender
+#
+#   Other examples:
+#     blender -p site/
+#     blender -t css
+#     blender -t css -d
+#     blender -P
+#
+# == Usage 
+#   blender [options]
+#
+#   For help use: blender -h
+#
+# == Options
+#   -h, --help                     Displays help message
+#   -v, --version                  Display the version, then exit
+#   -p <path>, --path <path>       Path to blender.yaml file
+#   -t <css|js>, --type <css|js>   Compress CSS or JavaScript only
+#   -d, --data                     Convert CSS url(http:) to url(data:) ALPHA FEATURE
+#   --force                        Force file minification when there are no new updates
+#   TODO Add a cli parameter for png compression mode
+#
+# == Author
+#   Chris Griego & Blake Elshire
+#
+# == Copyright
+#   Copyright (c) 2007 Chris Griego & Blake Elshire. Licensed under the MIT License:
+#   http://www.opensource.org/licenses/mit-license.php
+
+
+require 'yaml'
+require 'optparse'
+require 'rdoc/usage'
+require 'ostruct'
+require 'base64'
+
+class Blender
+  VERSION = '1.0'
+  attr_reader :options
+
+  def initialize(arguments, stdin)
+    @arguments = arguments
+    # Set defaults
+    @options = OpenStruct.new
+    @options.png = false
+    @options.data = false
+    @options.force = false
+  end
+  
+  def blend
+    if parsed_options?
+      Dir.chdir(@options.path) if @options.path
+      unless File.exists? 'blender.yaml'
+        puts "Couldn't find 'blender.yaml'"
+        exit 1
+      end
+      
+      blender = YAML::load_file 'blender.yaml'
+      
+      blender.each do |output_name, inputs|
+        output_new = false
+        # Checks the type flag and if the current file meets the type requirements continues
+        if output_name.match "." + @options.file_type.to_s
+          
+          file_type = output_name.match(/\.css/) ? "css" : "js"
+          
+          # Checks if output file exists and checks the mtimes of the source files to the output file if new creates a new file
+          if File.exists? output_name
+            inputs.each do |i|
+              if File.mtime(i) > File.mtime(output_name)
+                output_new = true
+                break
+              end
+            end
+            
+            if output_new || @options.force
+                create_output(output_name, inputs, file_type)
+            else
+                puts "Skipping: #{output_name}"
+            end
+          else
+              create_output(output_name, inputs, file_type)
+          end
+        end
+      end
+    end
+  end
+  
+  protected
+  
+    def parsed_options?
+      opts = OptionParser.new
+      opts.on('-v', '--version') { output_version ; exit 0 }
+      opts.on('-h', '--help')    { output_help }
+      opts.on('-p PATH', '--path PATH', String, "Path of blender.yaml file") do |path|
+        @options.path = path
+      end
+      opts.on("-t [TYPE]", "--type [TYPE]", [:css, :js], "Select file type to minify (css, js)") do |t|
+        @options.file_type = t
+      end
+      opts.on("-d", "--data", String, "Change url(http:) to url(data:) in css files") { @options.data = true }
+      opts.on("--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
+      
+      opts.parse!(@arguments) rescue return false
+      true
+    end
+    
+    def create_output(output_name, inputs, type)
+      File.open(output_name, 'w') do |output_file|
+        inputs.each do |i|
+          output_file << IO.read(i)
+        end
+      end
+
+      # Compress
+      IO.popen("java -jar ~/bin/yuicompressor.jar --type #{type}", mode="r+") do |io|
+        io.write IO.read(output_name)
+        io.close_write
+        File.open(output_name, 'w') do |output_file|
+          output_file << io.read
+        end
+      end
+
+      # Workaround for YUI Compressor Bug #1938329 & Bug #1961175
+      if output_name.match /\.css$/
+        output = IO.read(output_name)
+        output.gsub! ' and(', ' and ('
+        output.gsub! '/**/;}', '/**/}'
+        
+        if @options.data
+          output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) {
+            uri = $1
+            
+            # Figure out the mime type. TODO Seems hacky is there a way to read mime type built into Ruby?
+            mime_type = case
+              when uri.include?(".png") then "image/png"
+              when uri.include?(".jpg") then "image/jpg"
+              when uri.include?(".jpeg") then "image/jpeg"
+              when uri.include?(".gif") then "image/gif"
+              end
+            
+            # Make the URI absolute instead of relative. TODO Again seems kinda hacky is there a better way?
+            uri.gsub! "../", ""
+            url_contents = make_data_uri(IO.read(uri), mime_type)
+            
+            %Q!url("#{url_contents}")!
+          }
+        end
+        
+        File.open(output_name, 'w') do |output_file|
+          output_file << output
+        end
+      end
+      puts output_name
+    end
+    
+    def make_data_uri(content, content_type)
+      outuri = 'data:' + content_type + ';base64'
+      content = Base64.encode64(content).gsub("\n", '')
+      outuri += ",#{content}"
+      return outuri
+    end
+    
+    def output_version
+      puts "#{File.basename(__FILE__)} version #{VERSION}"
+    end
+    
+    def output_help
+      output_version
+      RDoc::usage() #exits app
+    end
+end
+
+# Create and run the application
+blender = Blender.new(ARGV, STDIN)
+blender.blend
