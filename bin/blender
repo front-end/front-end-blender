@@ -143,17 +143,16 @@ class Blender
         if @options.data
           output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) {
             uri = $1
-            
-            # Figure out the mime type. TODO Seems hacky is there a way to read mime type built into Ruby?
-            mime_type = case
-              when uri.include?(".png") then "image/png"
-              when uri.include?(".jpg") then "image/jpg"
-              when uri.include?(".jpeg") then "image/jpeg"
-              when uri.include?(".gif") then "image/gif"
-              end
+            mime_type = ''
             
             # Make the URI absolute instead of relative. TODO Again seems kinda hacky is there a better way?
             uri.gsub! "../", ""
+
+            # Figure out the mime type. TODO Seems hacky is there a way to read mime type built into Ruby?
+            IO.popen("file --mime #{uri}") do |io|
+              mime_type = io.read.split(": ")[1]
+            end
+            
             url_contents = make_data_uri(IO.read(uri), mime_type)
             
             %Q!url("#{url_contents}")!
@@ -169,9 +168,9 @@ class Blender
     
     def make_data_uri(content, content_type)
       outuri = 'data:' + content_type + ';base64'
-      content = Base64.encode64(content).gsub("\n", '')
+      content = Base64.encode64(content)
       outuri += ",#{content}"
-      return outuri
+      return outuri.gsub("\n", '')
     end
     
     def output_version
