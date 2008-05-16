@@ -2,36 +2,39 @@
 # == Synopsis 
 #   Blender is like Make or Ant for the front-end. It aggregates and compresses
 #   CSS and/or JavaScript assets of a site into production-ready files.
-#
+# 
 # == Examples
 #   In your site directory run blender to minify CSS and JavaScript.
 #     blender
-#
+# 
 #   Other examples:
-#     blender -p site/
+#     blender -f site/blender.yaml
 #     blender -t css
 #     blender -t css -d
-#     blender -P
-#
+# 
 # == Usage 
 #   blender [options]
-#
+# 
 #   For help use: blender -h
-#
+# 
 # == Options
 #   -h, --help                     Displays help message
 #   -v, --version                  Display the version, then exit
-#   -p <path>, --path <path>       Path to blender.yaml file
+#   -f <file>, --file <file>       Use given Blendfile
 #   -t <css|js>, --type <css|js>   Compress CSS or JavaScript only
-#   -d, --data                     Convert CSS url(http:) to url(data:) ALPHA FEATURE
-#   --force                        Force file minification when there are no new updates
-#   TODO Add a cli parameter for png compression mode
-#
-# == Author
+#   -d, --data                     Convert CSS url(image.ext) to url(data:) EXPERIMENTAL
+#   -F, --force                    Force file minification when there are no new updates
+# 
+# == Authors
 #   Chris Griego & Blake Elshire
-#
-# == Copyright
-#   Copyright (c) 2007 Chris Griego & Blake Elshire. Licensed under the MIT License:
+# 
+# == Installation
+#   To install the beta version, run the following at the command line:
+#     sudo gem install cgriego-front-end-blender --source=http://gems.github.com
+# 
+# == License
+#   Copyright (c) 2008 Chris Griego & Blake Elshire.
+#   Licensed under the MIT License:
 #   http://www.opensource.org/licenses/mit-license.php
 
 
@@ -42,28 +45,29 @@ require 'ostruct'
 require 'base64'
 
 class Blender
-  VERSION = '1.0'
+  VERSION = '0.5.1'
   attr_reader :options
-
+  
   def initialize(arguments, stdin)
     @arguments = arguments
     # Set defaults
     @options = OpenStruct.new
-    @options.png = false
-    @options.data = false
-    @options.force = false
+    @options.blendfile = 'blender.yaml'
+    @options.png       = false
+    @options.data      = false
+    @options.force     = false
   end
   
   def blend
     if parsed_options?
-      puts File.dirname(__FILE__)
-      Dir.chdir(@options.path) if @options.path
-      unless File.exists? 'blender.yaml'
-        puts "Couldn't find 'blender.yaml'"
+      unless File.exists? @options.blendfile
+        puts "Couldn't find '#{@options.blendfile}'"
         exit 1
       end
       
-      blender = YAML::load_file 'blender.yaml'
+      blender = YAML::load_file @options.blendfile
+      
+      Dir.chdir(File.dirname(@options.blendfile))
       
       blender.each do |output_name, inputs|
         output_new = false
@@ -100,35 +104,36 @@ class Blender
       opts = OptionParser.new
       opts.on('-v', '--version') { output_version ; exit 0 }
       opts.on('-h', '--help')    { output_help }
-      opts.on('-p PATH', '--path PATH', String, "Path of blender.yaml file") do |path|
-        @options.path = path
+      opts.on('-f FILE', '--file FILE', String, "Use given Blendfile") do |blendfile|
+        @options.blendfile = blendfile
       end
       opts.on("-t [TYPE]", "--type [TYPE]", [:css, :js], "Select file type to minify (css, js)") do |t|
         @options.file_type = t
       end
-      opts.on("-d", "--data", String, "Change url(http:) to url(data:) in css files") { @options.data = true }
-      opts.on("--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
+      opts.on("-d", "--data", String, "Change url(image.ext) to url(data:) in css files") { @options.data = true }
+      opts.on("-F", "--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
       
       opts.parse!(@arguments) rescue return false
       true
     end
     
+    # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
     def create_output(output_name, inputs, type)
       File.open(output_name, 'w') do |output_file|
         inputs.each do |i|
           output_file << IO.read(i)
         end
       end
-
+      
       # Compress
-      IO.popen("java -jar ~/bin/yuicompressor.jar --type #{type}", mode="r+") do |io|
+      IO.popen("java -jar #{File.dirname(__FILE__)}/../lib/yuicompressor.jar --type #{type}", mode="r+") do |io|
         io.write IO.read(output_name)
         io.close_write
         File.open(output_name, 'w') do |output_file|
           output_file << io.read
         end
       end
-
+      
       # Workaround for YUI Compressor Bug #1938329 & Bug #1961175
       if output_name.match /\.css$/
         output = IO.read(output_name)
