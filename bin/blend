@@ -4,18 +4,18 @@
 #   CSS and/or JavaScript assets of a site into production-ready files.
 # 
 # == Examples
-#   In your site directory run blender to minify CSS and JavaScript.
-#     blender
+#   In your site directory run 'blend' to minify CSS and JavaScript.
+#     blend
 # 
 #   Other examples:
-#     blender -f site/blender.yaml
-#     blender -t css
-#     blender -t css -d
+#     blend -f site/blender.yaml
+#     blend -t css
+#     blend -t css -d
 # 
 # == Usage 
-#   blender [options]
+#   blend [options]
 # 
-#   For help use: blender -h
+#   For help use: blend -h
 # 
 # == Options
 #   -h, --help                     Displays help message
