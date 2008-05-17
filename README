@@ -29,7 +29,7 @@
 
 == Installation
   To install the beta version, run the following at the command line:
-    sudo gem install cgriego-blender --source=http://gems.github.com
+    sudo gem install front-end-blender --source=http://gems.github.com
 
 == License
   Copyright (c) 2008 Chris Griego & Blake Elshire.
