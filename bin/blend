@@ -1,42 +1,10 @@
 #!/usr/bin/env ruby
-# == Synopsis 
-#   Blender is like Make or Ant for the front-end. It aggregates and compresses
-#   CSS and/or JavaScript assets of a site into production-ready files.
-# 
-# == Examples
-#   In your site directory run 'blend' to minify CSS and JavaScript.
-#     blend
-# 
-#   Other examples:
-#     blend -f site/blender.yaml
-#     blend -t css
-#     blend -t css -d
-# 
-# == Usage 
-#   blend [options]
-# 
-#   For help use: blend -h
-# 
-# == Options
-#   -h, --help                     Displays help message
-#   -v, --version                  Display the version, then exit
-#   -f <file>, --file <file>       Use given Blendfile
-#   -t <css|js>, --type <css|js>   Compress CSS or JavaScript only
-#   -d, --data                     Convert CSS url(image.ext) to url(data:) EXPERIMENTAL
-#   -F, --force                    Force file minification when there are no new updates
-# 
-# == Authors
-#   Chris Griego & Blake Elshire
-# 
-# == Installation
-#   To install the beta version, run the following at the command line:
-#     sudo gem install front-end-blender --source=http://gems.github.com
-# 
-# == License
-#   Copyright (c) 2008 Chris Griego & Blake Elshire.
-#   Licensed under the MIT License:
-#   http://www.opensource.org/licenses/mit-license.php
 
+# Copyright (c) 2008 Chris Griego
+#           (c) 2008 Blake Elshire
+# 
+# Blender is freely distributable under the terms of an MIT-style license.
+# For details, see http://www.opensource.org/licenses/mit-license.php
 
 require 'yaml'
 require 'optparse'
@@ -45,11 +13,14 @@ require 'ostruct'
 require 'base64'
 
 class Blender
-  VERSION = '0.5.1'
+  VERSION = '0.5.2'
+  
   attr_reader :options
   
   def initialize(arguments, stdin)
-    @arguments = arguments
+    @arguments   = !arguments.include?('--') ? arguments : arguments[0...arguments.index('--')]
+    @passthrough = !arguments.include?('--') ? ''        : arguments[arguments.index('--')+1..-1]
+    
     # Set defaults
     @options = OpenStruct.new
     @options.blendfile = 'blender.yaml'
@@ -126,7 +97,7 @@ class Blender
       end
       
       # Compress
-      IO.popen("java -jar #{File.dirname(__FILE__)}/../lib/yuicompressor.jar --type #{type}", mode="r+") do |io|
+      IO.popen("java -jar #{File.dirname(__FILE__)}/../lib/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
         io.write IO.read(output_name)
         io.close_write
         File.open(output_name, 'w') do |output_file|
@@ -147,7 +118,7 @@ class Blender
             
             # Make the URI absolute instead of relative. TODO Again seems kinda hacky is there a better way?
             uri.gsub! "../", ""
-
+            
             # Figure out the mime type. TODO Seems hacky is there a way to read mime type built into Ruby?
             IO.popen("file --mime #{uri}") do |io|
               mime_type = io.read.split(": ")[1]

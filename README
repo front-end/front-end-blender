@@ -1,37 +1,43 @@
-== Synopsis 
-  Blender is like Make or Ant for the front-end. It aggregates and compresses
-  CSS and/or JavaScript assets of a site into production-ready files.
+== What is Blender?
+
+Blender is like ant or make for the front-end. It aggregates and compresses
+CSS and/or JavaScript assets for a site into efficient, production-ready files.
 
 == Examples
-  In your site directory run 'blend' to minify CSS and JavaScript.
-    blend
 
-  Other examples:
-    blend -f site/blender.yaml
-    blend -t css
-    blend -t css -d
+In your site directory run 'blend' to minify CSS and JavaScript.
+  blend
 
-== Usage 
-  blend [options]
+Other examples:
+  blend -f site/blender.yaml
+  blend -t css
+  blend -t css -d
+  blend -F -- --preserve-semi
 
-  For help use: blend -h
+== Usage
+
+blend [options] [-- yui-compressor-options]
+
+For help use: blend -h
 
 == Options
-  -h, --help                     Displays help message
-  -v, --version                  Display the version, then exit
-  -f <file>, --file <file>       Use given Blendfile
-  -t <css|js>, --type <css|js>   Compress CSS or JavaScript only
-  -d, --data                     Convert CSS url(image.ext) to url(data:) EXPERIMENTAL
-  -F, --force                    Force file minification when there are no new updates
 
-== Authors
-  Chris Griego & Blake Elshire
+-h, --help                     Displays help message
+-v, --version                  Display the version, then exit
+-f <file>, --file <file>       Use given Blendfile
+-t <css|js>, --type <css|js>   Compress CSS or JavaScript only
+-d, --data                     Convert CSS url(image.ext) to url(data:) EXPERIMENTAL
+-F, --force                    Force file minification when there are no new updates
 
 == Installation
-  To install the beta version, run the following at the command line:
-    sudo gem install front-end-blender --source=http://gems.github.com
+
+To install the beta gem, run the following at the command line:
+  sudo gem install front-end-blender --source=http://gems.github.com
 
 == License
-  Copyright (c) 2008 Chris Griego & Blake Elshire.
-  Licensed under the MIT License:
-  http://www.opensource.org/licenses/mit-license.php
+
+Copyright (c) 2008 Chris Griego
+          (c) 2008 Blake Elshire
+
+Blender is freely distributable under the terms of an MIT-style license.
+For details, see http://www.opensource.org/licenses/mit-license.php
