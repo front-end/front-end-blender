@@ -116,10 +116,10 @@ class Blender
             uri = $1
             mime_type = ''
             
-            # Make the URI absolute instead of relative. TODO Again seems kinda hacky is there a better way?
+            # Make the URI absolute instead of relative. TODO Seems kinda hacky is there a better way?
             uri.gsub! "../", ""
             
-            # Figure out the mime type. TODO Seems hacky is there a way to read mime type built into Ruby?
+            # Figure out the mime type.
             IO.popen("file --mime #{uri}") do |io|
               mime_type = io.read.split(": ")[1]
             end
