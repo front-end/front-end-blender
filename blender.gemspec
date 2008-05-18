@@ -9,4 +9,7 @@ Gem::Specification.new do |s|
   s.description = 'Blender is like ant or make for the front-end. It aggregates and compresses CSS and/or JavaScript assets for a site into efficient, production-ready files.'
   s.files       = [ "README", "MIT-LICENSE", "bin/blend", "lib/yuicompressor.jar" ]
   s.executables << 'blend'
+  
+  s.add_dependency('mime-types', '>= 1.15')
+  s.requirements << 'Java, v1.4 or greater'
 end
