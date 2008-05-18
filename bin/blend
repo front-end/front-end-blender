@@ -12,6 +12,7 @@ require 'rdoc/usage'
 require 'ostruct'
 require 'base64'
 
+# TODO Move class to lib so other tools could potentially reuse it
 class Blender
   VERSION = '0.5.2'
   
