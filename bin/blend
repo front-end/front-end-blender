@@ -42,9 +42,9 @@ class Blender
       
       blender.each do |output_name, inputs|
         output_new = false
+        
         # Checks the type flag and if the current file meets the type requirements continues
         if output_name.match "." + @options.file_type.to_s
-          
           file_type = output_name.match(/\.css/) ? "css" : "js"
           
           # Checks if output file exists and checks the mtimes of the source files to the output file if new creates a new file
@@ -57,12 +57,12 @@ class Blender
             end
             
             if output_new || @options.force
-                create_output(output_name, inputs, file_type)
+              create_output(output_name, inputs, file_type)
             else
-                puts "Skipping: #{output_name}"
+              puts "Skipping: #{output_name}"
             end
           else
-              create_output(output_name, inputs, file_type)
+            create_output(output_name, inputs, file_type)
           end
         end
       end
@@ -71,87 +71,97 @@ class Blender
   
   protected
   
-    def parsed_options?
-      opts = OptionParser.new
-      opts.on('-v', '--version') { output_version ; exit 0 }
-      opts.on('-h', '--help')    { output_help }
-      opts.on('-f FILE', '--file FILE', String, "Use given Blendfile") do |blendfile|
-        @options.blendfile = blendfile
-      end
-      opts.on("-t [TYPE]", "--type [TYPE]", [:css, :js], "Select file type to minify (css, js)") do |t|
-        @options.file_type = t
-      end
-      opts.on("-d", "--data", String, "Change url(image.ext) to url(data:) in css files") { @options.data = true }
-      opts.on("-F", "--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
-      
-      opts.parse!(@arguments) rescue return false
-      true
+  def parsed_options?
+    opts = OptionParser.new
+    
+    opts.on('-v', '--version') { output_version ; exit 0 }
+    opts.on('-h', '--help')    { output_help }
+    
+    opts.on('-f FILE', '--file FILE', String, "Use given Blendfile") do |blendfile|
+      @options.blendfile = blendfile
     end
     
-    # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
-    def create_output(output_name, inputs, type)
+    opts.on("-t [TYPE]", "--type [TYPE]", [:css, :js], "Select file type to minify (css, js)") do |t|
+      @options.file_type = t
+    end
+    
+    opts.on("-d", "--data", String, "Change url(image.ext) to url(data:) in css files") { @options.data = true }
+    opts.on("-F", "--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
+    
+    opts.parse!(@arguments) rescue return false
+    
+    true
+  end
+  
+  # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
+  def create_output(output_name, inputs, type)
+    File.open(output_name, 'w') do |output_file|
+      inputs.each do |i|
+        output_file << IO.read(i)
+      end
+    end
+    
+    # Compress
+    IO.popen("java -jar #{File.dirname(__FILE__)}/../lib/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
+      io.write IO.read(output_name)
+      io.close_write
+      
       File.open(output_name, 'w') do |output_file|
-        inputs.each do |i|
-          output_file << IO.read(i)
+        output_file << io.read
+      end
+    end
+    
+    # TODO Move this to before the file gets written
+    # Workaround for YUI Compressor Bug #1938329 & Bug #1961175
+    if output_name.match /\.css$/
+      output = IO.read(output_name)
+      
+      output.gsub! ' and(', ' and ('
+      output.gsub! '/**/;}', '/**/}'
+      
+      if @options.data
+        output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
+          uri = $1
+          mime_type = ''
+          
+          # Make the URI absolute instead of relative. TODO Seems kinda hacky is there a better way?
+          uri.gsub! "../", ""
+          
+          # Figure out the mime type.
+          IO.popen("file --mime #{uri}") do |io|
+            mime_type = io.read.split(": ")[1]
+          end
+          
+          url_contents = make_data_uri(IO.read(uri), mime_type)
+          
+          %Q!url("#{url_contents}")!
         end
       end
       
-      # Compress
-      IO.popen("java -jar #{File.dirname(__FILE__)}/../lib/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
-        io.write IO.read(output_name)
-        io.close_write
-        File.open(output_name, 'w') do |output_file|
-          output_file << io.read
-        end
+      File.open(output_name, 'w') do |output_file|
+        output_file << output
       end
-      
-      # Workaround for YUI Compressor Bug #1938329 & Bug #1961175
-      if output_name.match /\.css$/
-        output = IO.read(output_name)
-        output.gsub! ' and(', ' and ('
-        output.gsub! '/**/;}', '/**/}'
-        
-        if @options.data
-          output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) {
-            uri = $1
-            mime_type = ''
-            
-            # Make the URI absolute instead of relative. TODO Seems kinda hacky is there a better way?
-            uri.gsub! "../", ""
-            
-            # Figure out the mime type.
-            IO.popen("file --mime #{uri}") do |io|
-              mime_type = io.read.split(": ")[1]
-            end
-            
-            url_contents = make_data_uri(IO.read(uri), mime_type)
-            
-            %Q!url("#{url_contents}")!
-          }
-        end
-        
-        File.open(output_name, 'w') do |output_file|
-          output_file << output
-        end
-      end
-      puts output_name
     end
     
-    def make_data_uri(content, content_type)
-      outuri = 'data:' + content_type + ';base64'
-      content = Base64.encode64(content)
-      outuri += ",#{content}"
-      return outuri.gsub("\n", '')
-    end
+    puts output_name
+  end
+  
+  def make_data_uri(content, content_type)
+    outuri   = 'data:' + content_type + ';base64'
+    content  = Base64.encode64(content)
+    outuri  += ",#{content}"
     
-    def output_version
-      puts "#{File.basename(__FILE__)} version #{VERSION}"
-    end
-    
-    def output_help
-      output_version
-      RDoc::usage() #exits app
-    end
+    outuri.gsub("\n", '')
+  end
+  
+  def output_version
+    puts "#{File.basename(__FILE__)} version #{VERSION}"
+  end
+  
+  def output_help
+    output_version
+    RDoc::usage() #exits app
+  end
 end
 
 # Create and run the application
