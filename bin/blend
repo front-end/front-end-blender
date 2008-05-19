@@ -11,6 +11,7 @@ require 'optparse'
 require 'rdoc/usage'
 require 'ostruct'
 require 'base64'
+require 'benchmark'
 require 'mime/types'
 
 # TODO Move class to lib so other tools could potentially reuse it
@@ -33,41 +34,45 @@ class Blender
   
   def blend
     if parsed_options?
-      unless File.exists? @options.blendfile
-        puts "Couldn't find '#{@options.blendfile}'"
-        exit 1
-      end
-      
-      blender = YAML::load_file @options.blendfile
-      
-      Dir.chdir(File.dirname(@options.blendfile))
-      
-      blender.each do |output_name, inputs|
-        output_new = false
+      elapsed = Benchmark.realtime do
+        unless File.exists? @options.blendfile
+          puts "Couldn't find '#{@options.blendfile}'"
+          exit 1
+        end
         
-        # Checks the type flag and if the current file meets the type requirements continues
-        if output_name.match "." + @options.file_type.to_s
-          file_type = output_name.match(/\.css/) ? "css" : "js"
+        blender = YAML::load_file @options.blendfile
+        
+        Dir.chdir(File.dirname(@options.blendfile))
+        
+        blender.each do |output_name, inputs|
+          output_new = false
           
-          # Checks if output file exists and checks the mtimes of the source files to the output file if new creates a new file
-          if File.exists? output_name
-            inputs.each do |i|
-              if File.mtime(i) > File.mtime(output_name)
-                output_new = true
-                break
-              end
-            end
+          # Checks the type flag and if the current file meets the type requirements continues
+          if output_name.match "." + @options.file_type.to_s
+            file_type = output_name.match(/\.css/) ? "css" : "js"
             
-            if output_new || @options.force
-              create_output(output_name, inputs, file_type)
+            # Checks if output file exists and checks the mtimes of the source files to the output file if new creates a new file
+            if File.exists? output_name
+              inputs.each do |i|
+                if File.mtime(i) > File.mtime(output_name)
+                  output_new = true
+                  break
+                end
+              end
+              
+              if output_new || @options.force
+                create_output(output_name, inputs, file_type)
+              else
+                puts "Skipping: #{output_name}"
+              end
             else
-              puts "Skipping: #{output_name}"
+              create_output(output_name, inputs, file_type)
             end
-          else
-            create_output(output_name, inputs, file_type)
           end
         end
       end
+      
+      puts sprintf("%.5f", elapsed) + " seconds"
     end
   end
   
