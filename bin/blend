@@ -17,7 +17,7 @@ require 'find'
 
 # TODO Move class to lib so other tools could potentially reuse it
 class Blender
-  VERSION = '0.5.3'
+  VERSION = '0.6.0'
   
   attr_reader :options
   
