@@ -13,6 +13,7 @@ require 'ostruct'
 require 'base64'
 require 'benchmark'
 require 'mime/types'
+require 'find'
 
 # TODO Move class to lib so other tools could potentially reuse it
 class Blender
@@ -94,10 +95,41 @@ class Blender
     
     opts.on("-d", "--data", String, "Change url(image.ext) to url(data:) in css files") { @options.data = true }
     opts.on("-F", "--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
-    
+    opts.on("--generate", String, "Generate a blendfile") { create_blendfile() }
     opts.parse!(@arguments) rescue return false
     
     true
+  end
+  
+  def create_blendfile()
+    blend_files = Hash.new
+    Find.find(Dir.getwd) do |f|
+      if f.match /\.css$/
+        key = File.dirname(f) + "-min.css"
+        if blend_files.has_key? key
+          blend_files[key] << f
+        else
+          blend_files[key] = [f]
+        end
+      end
+      
+      if f.match /\.js$/
+        key = File.dirname(f) + "-min.js"
+        if blend_files.has_key? key
+          blend_files[key] << f
+        else
+          blend_files[key] = [f]
+        end
+      end
+      
+      Find.prune if f=~ /.svn/
+    end
+
+    if !File.exists? 'blender.yaml' || @options.force
+      File.open('blender.yaml', 'w') {|f| YAML.dump(blend_files, f)}
+    end
+    
+    exit 0
   end
   
   # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])

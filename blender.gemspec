@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'blender'
-  s.version     = '0.5.3'
+  s.version     = '0.6.0'
   s.date        = Time.now
   s.authors     = 'Blake Elshire & Chris Griego'
   s.email       = 'belshire@gmail.com'
