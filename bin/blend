@@ -16,7 +16,7 @@ require 'mime/types'
 
 # TODO Move class to lib so other tools could potentially reuse it
 class Blender
-  VERSION = '0.5.2'
+  VERSION = '0.5.3'
   
   attr_reader :options
   
@@ -103,50 +103,45 @@ class Blender
   # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
   def create_output(output_name, inputs, type)
     File.open(output_name, 'w') do |output_file|
+      output = ''
       inputs.each do |i|
-        output_file << IO.read(i)
+        output += IO.read(i)
       end
-    end
-    
-    # Compress
-    real_file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
-    
-    IO.popen("java -jar #{File.dirname(real_file)}/../lib/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
-      io.write IO.read(output_name)
-      io.close_write
-      
-      File.open(output_name, 'w') do |output_file|
-        output_file << io.read
-      end
-    end
-    
-    # TODO Move this to before the file gets written
-    # Workaround for YUI Compressor Bug #1938329 & Bug #1961175
-    if output_name.match /\.css$/
-      output = IO.read(output_name)
-      
-      output.gsub! ' and(', ' and ('
-      output.gsub! '/**/;}', '/**/}'
-      
-      if @options.data
-        output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
-          uri = $1
-          mime_type = ''
-          
-          # Make the URI absolute instead of relative. TODO Seems kinda hacky is there a better way?
-          uri.gsub! "../", ""
-          
-          # Figure out the mime type.
-          mime_type = MIME::Types.type_for(uri)
-          
-          url_contents = make_data_uri(IO.read(uri), mime_type)
-          
-          %Q!url("#{url_contents}")!
+
+      # Compress
+      real_file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
+
+      IO.popen("java -jar #{File.dirname(real_file)}/../lib/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
+        io.write output
+        io.close_write
+
+        output = io.read
+        # TODO Move this to before the file gets written
+        # Workaround for YUI Compressor Bug #1938329 & Bug #1961175
+        if output_name.match /\.css$/
+
+          output.gsub! ' and(', ' and ('
+          output.gsub! '/**/;}', '/**/}'
+
+          if @options.data
+            output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
+              uri = $1
+              mime_type = ''
+
+              # Make the URI absolute instead of relative. TODO Seems kinda hacky is there a better way?
+              uri.gsub! "../", ""
+
+              # Figure out the mime type.
+              mime_type = MIME::Types.type_for(uri)
+              
+              url_contents = make_data_uri(IO.read(uri), mime_type[0])
+
+              %Q!url("#{url_contents}")!
+            end
+          end
+
+          output_file << output
         end
-      end
-      
-      File.open(output_name, 'w') do |output_file|
-        output_file << output
       end
     end
     
