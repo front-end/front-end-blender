@@ -50,7 +50,7 @@ For help use: blend -h
 -f <file>, --file <file>       Use given Blendfile
 -t <css|js>, --type <css|js>   Compress CSS or JavaScript only
 -d, --data                     Convert CSS url(image.ext) to url(data:) EXPERIMENTAL
--F, --force                    Force file minification when there are no new updates
+--force                        Force file minification when there are no new updates
 
 == Installation
 

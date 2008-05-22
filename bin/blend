@@ -94,7 +94,7 @@ class Blender
     end
     
     opts.on("-d", "--data", String, "Change url(image.ext) to url(data:) in css files") { @options.data = true }
-    opts.on("-F", "--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
+    opts.on("--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
     opts.on("--generate", String, "Generate a blendfile") { create_blendfile() }
     opts.parse!(@arguments) rescue return false
     
