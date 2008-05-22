@@ -17,7 +17,7 @@ require 'find'
 
 # TODO Move class to lib so other tools could potentially reuse it
 class Blender
-  VERSION = '0.8'
+  VERSION = '0.8.1'
   
   attr_reader :options
   
@@ -48,7 +48,7 @@ class Blender
         
         Dir.chdir(File.dirname(@options.blendfile))
         
-        blender.each do |output_name, inputs|
+        blender.each do |output_name, sources|
           output_new = false
           
           # Checks the type flag and if the current file meets the type requirements continues
@@ -57,7 +57,7 @@ class Blender
             
             # Checks if output file exists and checks the mtimes of the source files to the output file if new creates a new file
             if File.exists? output_name
-              inputs.each do |i|
+              sources.each do |i|
                 if File.mtime(i) > File.mtime(output_name)
                   output_new = true
                   break
@@ -65,12 +65,12 @@ class Blender
               end
               
               if output_new || @options.force
-                create_output(output_name, inputs, file_type)
+                create_output(output_name, sources, file_type)
               else
                 puts "Skipping: #{output_name}"
               end
             else
-              create_output(output_name, inputs, file_type)
+              create_output(output_name, sources, file_type)
             end
           end
         end
@@ -85,14 +85,14 @@ class Blender
   def parsed_options?
     opts = OptionParser.new
     
-    opts.on('-h',      '--help')                                                                                        {    output_help               }
-    opts.on('-v',      '--version')                                                                                     {    output_version; exit 0    }
-    opts.on('-f FILE', '--file FILE',   String,      "Use given Blendfile")                                             {|f| @options.blendfile = f    }
-    opts.on('-t TYPE', '--type TYPE',   [:css, :js], "Select file type to blend (css, js)")                             {|t| @options.file_type = t    }
-    opts.on('-d',      '--data',        String,      "Convert url(image.ext) to url(data:) in CSS files EXPERIMENTAL")  {    @options.data      = true }
-    opts.on(           '--force',       String,      "Force blending when source files aren't newer than output files") {    @options.force     = true }
-    opts.on(           '--yui=YUIOPTS', String,      "Pass arguments to YUI Compressor")                                {|o| @options.yuiopts   = o    }
-    opts.on('-g',      '--generate',    String,      "Generate a stub Blendfile")                                       {    @options.generate  = true }
+    opts.on('-h',      '--help',                     "Show this message")                                               {    output_version; puts opts; exit 0 }
+    opts.on('-v',      '--version',                  "Prints Blender's version number")                                 {    output_version; exit 0            }
+    opts.on('-f FILE', '--file FILE',   String,      "Use given Blendfile")                                             {|f| @options.blendfile = f            }
+    opts.on('-t TYPE', '--type TYPE',   [:css, :js], "Select file type to blend (css, js)")                             {|t| @options.file_type = t            }
+    opts.on('-d',      '--data',        String,      "Convert url(image.ext) to url(data:) in CSS files EXPERIMENTAL")  {    @options.data      = true         }
+    opts.on(           '--force',       String,      "Force blending when source files aren't newer than output files") {    @options.force     = true         }
+    opts.on(           '--yui=YUIOPTS', String,      "Pass arguments to YUI Compressor")                                {|o| @options.yuiopts   = o            }
+    opts.on('-g',      '--generate',    String,      "Generate a stub Blendfile")                                       {    @options.generate  = true         }
     
     opts.parse!(@arguments) rescue return false
     
@@ -135,11 +135,11 @@ class Blender
   end
   
   # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
-  def create_output(output_name, inputs, type)
+  def create_output(output_name, sources, type)
     File.open(output_name, 'w') do |output_file|
       output = ''
       
-      inputs.each do |i|
+      sources.each do |i|
         output << IO.read(i)
       end
       
@@ -191,11 +191,6 @@ class Blender
   
   def output_version
     puts "Blender v#{VERSION}"
-  end
-  
-  def output_help
-    output_version
-    RDoc::usage() #exits app
   end
 end
 
