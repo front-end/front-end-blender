@@ -17,18 +17,16 @@ require 'find'
 
 # TODO Move class to lib so other tools could potentially reuse it
 class Blender
-  VERSION = '0.7.1'
+  VERSION = '0.8.1'
   
   attr_reader :options
   
   def initialize(arguments, stdin)
-    @arguments   = !arguments.include?('--') ? arguments : arguments[0...arguments.index('--')]
-    @passthrough = !arguments.include?('--') ? ''        : arguments[arguments.index('--')+1..-1]
+    @arguments = arguments
     
     # Set defaults
     @options = OpenStruct.new
     @options.blendfile = 'blender.yaml'
-    @options.png       = false
     @options.data      = false
     @options.force     = false
     @options.generate  = false
@@ -87,20 +85,15 @@ class Blender
   def parsed_options?
     opts = OptionParser.new
     
-    opts.on('-v', '--version') { output_version ; exit 0 }
-    opts.on('-h', '--help')    { output_help }
+    opts.on('-h',      '--help')                                                                                        {    output_help               }
+    opts.on('-v',      '--version')                                                                                     {    output_version; exit 0    }
+    opts.on('-f FILE', '--file FILE',   String,      "Use given Blendfile")                                             {|f| @options.blendfile = f    }
+    opts.on('-t TYPE', '--type TYPE',   [:css, :js], "Select file type to blend (css, js)")                             {|t| @options.file_type = t    }
+    opts.on('-d',      '--data',        String,      "Convert url(image.ext) to url(data:) in CSS files EXPERIMENTAL")  {    @options.data      = true }
+    opts.on(           '--force',       String,      "Force blending when source files aren't newer than output files") {    @options.force     = true }
+    opts.on(           '--yui=YUIOPTS', String,      "Pass arguments to YUI Compressor")                                {|o| @options.yuiopts   = o    }
+    opts.on('-g',      '--generate',    String,      "Generate a stub Blendfile")                                       {    @options.generate  = true }
     
-    opts.on('-f FILE', '--file FILE', String, "Use given Blendfile") do |blendfile|
-      @options.blendfile = blendfile
-    end
-    
-    opts.on("-t [TYPE]", "--type [TYPE]", [:css, :js], "Select file type to minify (css, js)") do |t|
-      @options.file_type = t
-    end
-    
-    opts.on("-d", "--data", String, "Change url(image.ext) to url(data:) in css files") { @options.data = true }
-    opts.on("--force", String, "Force minification when source files aren't newer than output files") { @options.force = true }
-    opts.on("--generate", String, "Generate a blendfile") { @options.generate = true }
     opts.parse!(@arguments) rescue return false
     
     true
@@ -148,7 +141,7 @@ class Blender
       # Compress
       real_file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
       
-      IO.popen("java -jar #{File.dirname(real_file)}/../lib/yui/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
+      IO.popen("java -jar #{File.dirname(real_file)}/../lib/yui/yuicompressor.jar #{@options.yuiopts} --type #{type}", mode="r+") do |io|
         io.write output
         io.close_write
         
@@ -192,7 +185,7 @@ class Blender
   end
   
   def output_version
-    puts "#{File.basename(__FILE__)} version #{VERSION}"
+    puts "Blender v#{VERSION}"
   end
   
   def output_help
