@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.version            = '0.8.1'
+  s.version            = '0.8.2'
   s.date               = Time.now
   
   s.name               = 'blender'
@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.email              = 'belshire@gmail.com'
   s.homepage           = 'http://github.com/front-end/front-end-blender/tree/master'
   
-  s.files              = [ "README", "MIT-LICENSE", "bin/blend", "lib/yui/yuicompressor.jar", "lib/yui/LICENSE" ]
+  s.files              = [ "README", "MIT-LICENSE", "bin/blend", "lib/front_end_architect/blender.rb", "lib/yui/yuicompressor.jar", "lib/yui/LICENSE" ]
   s.executables        << 'blend'
   s.default_executable = 'blend'
   
