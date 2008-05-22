@@ -108,22 +108,17 @@ class Blender
     blend_files = Hash.new
     
     Find.find(Dir.getwd) do |f|
-      if f.match /\.css$/
-        key = File.dirname(f) + "-min.css"
-        if blend_files.has_key? key
-          blend_files[key] << f
-        else
-          blend_files[key] = [f]
-        end
+      f.gsub!(Dir.getwd.to_s+"/", "")
+      if File.extname(f) == ".css"
+        file = f.split(".css")
+        min_file = file[0] + "-min.css"
+        blend_files[f] = [min_file]
       end
       
-      if f.match /\.js$/
-        key = File.dirname(f) + "-min.js"
-        if blend_files.has_key? key
-          blend_files[key] << f
-        else
-          blend_files[key] = [f]
-        end
+      if File.extname(f) == ".js"
+        file = f.split(".js")
+        min_file = file[0] + "-min.js"
+        blend_files[f] = [min_file]
       end
       
       Find.prune if File.basename(f).index('.') == 0
@@ -152,7 +147,7 @@ class Blender
         
         output = io.read
         
-        if output_name.match /\.css$/
+        if File.extname(output_name) == ".css"
           output.gsub! ' and(', ' and (' # Workaround for YUI Compressor Bug #1938329
           output.gsub! '/**/;}', '/**/}' # Workaround for YUI Compressor Bug #1961175
           
