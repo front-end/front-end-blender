@@ -88,13 +88,13 @@ module FrontEndArchitect
         if File.extname(f) == ".css"
           file = f.split(".css")
           min_file = file[0] + "-min.css"
-          blend_files[f] = [min_file]
+          blend_files[min_file] = [f]
         end
         
         if File.extname(f) == ".js"
           file = f.split(".js")
           min_file = file[0] + "-min.js"
-          blend_files[f] = [min_file]
+          blend_files[min_file] = [f]
         end
         
         Find.prune if File.basename(f).index('.') == 0
