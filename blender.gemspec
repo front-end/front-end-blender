@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.version            = '0.6.0'
+  s.version            = '0.6.1'
   s.date               = Time.now
   
   s.name               = 'blender'
@@ -11,8 +11,8 @@ Gem::Specification.new do |s|
   s.homepage           = 'http://github.com/front-end/front-end-blender/tree/master'
   
   s.files              = [ "README", "MIT-LICENSE", "bin/blend", "lib/yuicompressor.jar" ]
-  s.executables        << 'bin/blend'
-  s.default_executable = 'bin/blend'
+  s.executables        << 'blend'
+  s.default_executable = 'blend'
   
   s.add_dependency('mime-types', '>= 1.15')
   s.requirements << 'Java, v1.4 or greater'
