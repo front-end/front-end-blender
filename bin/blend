@@ -6,9 +6,9 @@
 # Blender is freely distributable under the terms of an MIT-style license.
 # For details, see http://www.opensource.org/licenses/mit-license.php
 
+require 'rubygems'
 require 'yaml'
 require 'optparse'
-require 'rdoc/usage'
 require 'ostruct'
 require 'base64'
 require 'benchmark'
