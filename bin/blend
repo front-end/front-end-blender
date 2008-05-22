@@ -94,7 +94,7 @@ class Blender
     end
     
     opts.on("-d", "--data", String, "Change url(image.ext) to url(data:) in css files") { @options.data = true }
-    opts.on("--force", String, "Force minification when source files aren't newer than min files") { @options.force = true }
+    opts.on("--force", String, "Force minification when source files aren't newer than output files") { @options.force = true }
     opts.on("--generate", String, "Generate a blendfile") { create_blendfile() }
     opts.parse!(@arguments) rescue return false
     
@@ -102,7 +102,13 @@ class Blender
   end
   
   def create_blendfile()
+    if File.exists? @options.blendfile && !@options.force
+      puts "'#{@options.blendfile}' already exists"
+      exit 1
+    end
+    
     blend_files = Hash.new
+    
     Find.find(Dir.getwd) do |f|
       if f.match /\.css$/
         key = File.dirname(f) + "-min.css"
@@ -122,12 +128,10 @@ class Blender
         end
       end
       
-      Find.prune if f=~ /.svn/
+      Find.prune if f =~ /.svn/ # TODO Ignore all files in any dot folder
     end
-
-    if !File.exists? 'blender.yaml' || @options.force
-      File.open('blender.yaml', 'w') {|f| YAML.dump(blend_files, f)}
-    end
+    
+    File.open(@options.blendfile, 'w') { |f| YAML.dump(blend_files, f) }
     
     exit 0
   end
@@ -139,39 +143,39 @@ class Blender
       inputs.each do |i|
         output += IO.read(i)
       end
-
+      
       # Compress
       real_file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
-
+      
       IO.popen("java -jar #{File.dirname(real_file)}/../lib/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
         io.write output
         io.close_write
-
+        
         output = io.read
         # TODO Move this to before the file gets written
         # Workaround for YUI Compressor Bug #1938329 & Bug #1961175
         if output_name.match /\.css$/
-
+          
           output.gsub! ' and(', ' and ('
           output.gsub! '/**/;}', '/**/}'
-
+          
           if @options.data
             output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
               uri = $1
               mime_type = ''
-
+              
               # Make the URI absolute instead of relative. TODO Seems kinda hacky is there a better way?
               uri.gsub! "../", ""
-
+              
               # Figure out the mime type.
               mime_type = MIME::Types.type_for(uri)
               
               url_contents = make_data_uri(IO.read(uri), mime_type[0])
-
+              
               %Q!url("#{url_contents}")!
             end
           end
-
+          
           output_file << output
         end
       end
