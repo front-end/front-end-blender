@@ -105,14 +105,14 @@ class Blender
     true
   end
   
-  def create_blendfile()
+  def create_blendfile
     if File.exists?(@options.blendfile) && !@options.force
       puts "'#{@options.blendfile}' already exists"
       exit 1
     end
-
+    
     blend_files = Hash.new
-
+    
     Find.find(Dir.getwd) do |f|
       if f.match /\.css$/
         key = File.dirname(f) + "-min.css"
@@ -122,7 +122,7 @@ class Blender
           blend_files[key] = [f]
         end
       end
-
+      
       if f.match /\.js$/
         key = File.dirname(f) + "-min.js"
         if blend_files.has_key? key
@@ -131,7 +131,7 @@ class Blender
           blend_files[key] = [f]
         end
       end
-
+      
       Find.prune if File.basename(f).index('.') == 0
     end
     
@@ -144,8 +144,9 @@ class Blender
   def create_output(output_name, inputs, type)
     File.open(output_name, 'w') do |output_file|
       output = ''
+      
       inputs.each do |i|
-        output += IO.read(i)
+        output << IO.read(i)
       end
       
       # Compress
@@ -156,12 +157,10 @@ class Blender
         io.close_write
         
         output = io.read
-        # TODO Move this to before the file gets written
-        # Workaround for YUI Compressor Bug #1938329 & Bug #1961175
+        
         if output_name.match /\.css$/
-          
-          output.gsub! ' and(', ' and ('
-          output.gsub! '/**/;}', '/**/}'
+          output.gsub! ' and(', ' and (' # Workaround for YUI Compressor Bug #1938329
+          output.gsub! '/**/;}', '/**/}' # Workaround for YUI Compressor Bug #1961175
           
           if @options.data
             output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
@@ -179,9 +178,9 @@ class Blender
               %Q!url("#{url_contents}")!
             end
           end
-          
-          output_file << output
         end
+        
+        output_file << output
       end
     end
     
