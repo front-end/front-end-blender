@@ -25,5 +25,5 @@ opts = OptionParser.new do |opts|
   opts.parse!(ARGV) rescue return false
 end
 
-blender = Blender.new(options)
+blender = FrontEndArchitect::Blender.new(options)
 blender.blend
