@@ -35,7 +35,7 @@ Other examples:
   blend -f site/blender.yaml
   blend -t css
   blend -t css -d
-  blend -F -- --preserve-semi
+  blend --yui='--preserve-semi'
 
 == Usage
 
@@ -45,12 +45,14 @@ For help use: blend -h
 
 == Options
 
--h, --help                     Displays help message
--v, --version                  Display the version, then exit
--f <file>, --file <file>       Use given Blendfile
--t <css|js>, --type <css|js>   Compress CSS or JavaScript only
--d, --data                     Convert CSS url(image.ext) to url(data:) EXPERIMENTAL
---force                        Force file minification when there are no new updates
+-h, --help                    Displays help message
+-v, --version                 Display the version
+-f <file>, --file <file>      Use given Blendfile
+-t <css|js>, --type <css|js>  Select file type to blend (css, js)
+-d, --data                    Convert url(image.ext) to url(data:) in CSS files EXPERIMENTAL
+--force                       Force blending when source files aren't newer than output files
+--yui=                        Pass arguments to YUI Compressor
+-g, --generate                Generate a stub Blendfile
 
 == Installation
 
