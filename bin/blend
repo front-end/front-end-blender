@@ -35,6 +35,10 @@ class Blender
   
   def blend
     if parsed_options?
+      if @options.generate
+        create_blendfile
+      end
+      
       elapsed = Benchmark.realtime do
         unless File.exists? @options.blendfile
           puts "Couldn't find '#{@options.blendfile}'"
@@ -95,7 +99,7 @@ class Blender
     
     opts.on("-d", "--data", String, "Change url(image.ext) to url(data:) in css files") { @options.data = true }
     opts.on("--force", String, "Force minification when source files aren't newer than output files") { @options.force = true }
-    opts.on("--generate", String, "Generate a blendfile") { create_blendfile() }
+    opts.on("--generate", String, "Generate a blendfile") { @options.generate = true }
     opts.parse!(@arguments) rescue return false
     
     true
@@ -128,7 +132,7 @@ class Blender
         end
       end
 
-      Find.prune if File.basename(f).index('.') == 0 # TODO Ignore all files in any dot folder
+      Find.prune if File.basename(f).index('.') == 0
     end
     
     File.open(@options.blendfile, 'w') { |f| YAML.dump(blend_files, f) }
