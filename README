@@ -55,7 +55,9 @@ For help use: blend -h
 == Installation
 
 To install the beta gem, run the following at the command line:
-  sudo gem install front-end-blender --source=http://gems.github.com
+  sudo gem install frontendblender
+
+Java, v1.4 or greater is required
 
 == License
 
