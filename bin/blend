@@ -86,7 +86,7 @@ class Blender
     opts = OptionParser.new
     
     opts.on('-h',      '--help',                     "Show this message")                                               {    output_version; puts opts; exit 0 }
-    opts.on('-v',      '--version',                  "Prints Blender's version number")                                 {    output_version; exit 0            }
+    opts.on('-V',      '--version',                  "Prints Blender's version number")                                 {    output_version; exit 0            }
     opts.on('-f FILE', '--file FILE',   String,      "Use given Blendfile")                                             {|f| @options.blendfile = f            }
     opts.on('-t TYPE', '--type TYPE',   [:css, :js], "Select file type to blend (css, js)")                             {|t| @options.file_type = t            }
     opts.on('-d',      '--data',        String,      "Convert url(image.ext) to url(data:) in CSS files EXPERIMENTAL")  {    @options.data      = true         }

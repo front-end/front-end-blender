@@ -30,7 +30,7 @@ _style/_global-min.css:
 
 Usage: blend [options]
     -h, --help                       Show this message
-    -v, --version                    Prints Blender's version number
+    -V, --version                    Prints Blender's version number
     -f, --file FILE                  Use given Blendfile
     -t, --type TYPE                  Select file type to blend (css, js)
     -d, --data                       Convert url(image.ext) to url(data:) in CSS files EXPERIMENTAL
