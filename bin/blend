@@ -152,7 +152,7 @@ class Blender
       # Compress
       real_file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
       
-      IO.popen("java -jar #{File.dirname(real_file)}/../lib/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
+      IO.popen("java -jar #{File.dirname(real_file)}/../lib/yui/yuicompressor.jar #{@passthrough} --type #{type}", mode="r+") do |io|
         io.write output
         io.close_write
         
