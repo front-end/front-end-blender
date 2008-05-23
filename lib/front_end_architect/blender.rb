@@ -10,19 +10,18 @@ require 'base64'
 require 'benchmark'
 require 'mime/types'
 require 'find'
+require 'pathname'
 
 module FrontEndArchitect
   class Blender
-    VERSION = '0.8.3'
+    VERSION = '0.8.4'
     
     DEFAULT_OPTIONS = {
       :blendfile => 'blender.yaml',
       :data      => false,
       :force     => false,
     }
-    
-    attr_reader :options
-    
+
     def initialize(opts)
       @options = DEFAULT_OPTIONS.merge(opts)
     end
@@ -72,10 +71,8 @@ module FrontEndArchitect
       
       puts sprintf("%.5f", elapsed) + " seconds"
     end
-    
-    protected
-    
-    def create_blendfile
+
+    def generate
       if File.exists?(@options[:blendfile]) && !@options[:force]
         puts "'#{@options[:blendfile]}' already exists"
         exit 1
@@ -105,14 +102,32 @@ module FrontEndArchitect
       exit 0
     end
     
-    # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
+    protected
+   # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
     def create_output(output_name, sources, type)
       File.open(output_name, 'w') do |output_file|
         output = ''
-        
+        # Determine full path of the output file
+        output_path = Pathname.new(File.expand_path(File.dirname(output_name)))
+
         sources.each do |i|
-          output << IO.read(i)
+          # Determine full path of input file
+          input_path = Pathname.new(File.dirname(i))
+
+          if (output_path==input_path)
+            output << IO.read(i)
+          else
+            pre_output = IO.read(i)
+            # Find all url(.ext) in file and rewrite relative url from output directory
+            pre_output = pre_output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
+              asset_path = Pathname.new(File.expand_path($1.gsub!("../", "")))
+              new_path = asset_path.relative_path_from(output_path)
+              %Q!url("#{new_path}")!
+            end
+            output << pre_output
+          end
         end
+
         
         # Compress
         libdir = File.join(File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__), *%w[.. .. lib])
