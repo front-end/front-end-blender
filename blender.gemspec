@@ -1,7 +1,7 @@
 require 'rake'
 
 Gem::Specification.new do |s|
-  s.version            = '0.8.4'
+  s.version            = '0.9'
   s.date               = Time.now
   
   s.name               = 'blender'

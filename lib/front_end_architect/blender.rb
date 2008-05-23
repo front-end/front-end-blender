@@ -14,14 +14,14 @@ require 'pathname'
 
 module FrontEndArchitect
   class Blender
-    VERSION = '0.8.4'
+    VERSION = '0.9'
     
     DEFAULT_OPTIONS = {
       :blendfile => 'blender.yaml',
       :data      => false,
       :force     => false,
     }
-
+    
     def initialize(opts)
       @options = DEFAULT_OPTIONS.merge(opts)
     end
@@ -71,7 +71,7 @@ module FrontEndArchitect
       
       puts sprintf("%.5f", elapsed) + " seconds"
     end
-
+    
     def generate
       if File.exists?(@options[:blendfile]) && !@options[:force]
         puts "'#{@options[:blendfile]}' already exists"
@@ -82,6 +82,7 @@ module FrontEndArchitect
       
       Find.find(Dir.getwd) do |f|
         f.gsub!(Dir.getwd.to_s+"/", "")
+        
         if File.extname(f) == ".css"
           file = f.split(".css")
           min_file = file[0] + "-min.css"
@@ -97,37 +98,45 @@ module FrontEndArchitect
         Find.prune if File.basename(f).index('.') == 0
       end
       
-      File.open(@options[:blendfile], 'w') { |f| YAML.dump(blend_files, f) }
+      blend_files = blend_files.sort
+      
+      File.open(@options[:blendfile], 'w') do |blendfile|
+        blend_files.each do |block|
+          blendfile << "#{block[0]}:\r\n  - #{block[1]}\r\n"
+        end
+      end
       
       exit 0
     end
     
     protected
-   # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
+    
+    # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
     def create_output(output_name, sources, type)
       File.open(output_name, 'w') do |output_file|
         output = ''
         # Determine full path of the output file
         output_path = Pathname.new(File.expand_path(File.dirname(output_name)))
-
+        
         sources.each do |i|
           # Determine full path of input file
           input_path = Pathname.new(File.dirname(i))
-
+          
           if (output_path==input_path)
             output << IO.read(i)
           else
             pre_output = IO.read(i)
+            
             # Find all url(.ext) in file and rewrite relative url from output directory
             pre_output = pre_output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
               asset_path = Pathname.new(File.expand_path($1.gsub!("../", "")))
               new_path = asset_path.relative_path_from(output_path)
               %Q!url("#{new_path}")!
             end
+            
             output << pre_output
           end
         end
-
         
         # Compress
         libdir = File.join(File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__), *%w[.. .. lib])
@@ -145,7 +154,6 @@ module FrontEndArchitect
             if @options[:data]
               output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
                 uri = $1
-                mime_type = ''
                 
                 # Make the URI absolute instead of relative. TODO Seems kinda hacky is there a better way?
                 uri.gsub! "../", ""
