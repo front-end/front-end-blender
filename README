@@ -39,7 +39,7 @@ source files are the hash values as an array. Here is a sample Blendfile:
         --force                      Force blending when source files aren't newer than output files
         --yui=YUIOPTS                Pass arguments to YUI Compressor
     -d, --data                       Convert url(file.ext) to url(data:) in CSS files EXPERIMENTAL
-    -z, --gzip                       Also create gzip output files
+    -z, --gzip                       Also create gzip output files EXPERIMENTAL
 
 == Examples
 
