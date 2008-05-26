@@ -14,10 +14,10 @@ require 'pathname'
 
 module FrontEndArchitect
   class Blender
-    VERSION = '0.9'
+    VERSION = '0.10'
     
     DEFAULT_OPTIONS = {
-      :blendfile => 'blender.yaml',
+      :blendfile => 'Blendfile.yaml',
       :data      => false,
       :force     => false,
     }

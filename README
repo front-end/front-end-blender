@@ -1,16 +1,18 @@
+= Front-End Blender
+
 == What is Blender?
 
 Blender is like ant or make for the front-end. It aggregates and compresses
 CSS and/or JavaScript assets for a site into efficient, production-ready files.
 
-== Blendfile
+== The Blendfile
 
-The Blendfile, named blender.yaml by default, is the configuration file that
-tells Blender which source files are combined into which output files. The
-file uses the YAML format. The output file is listed as hash key and source
-files are the hash values as an array. Here is a sample Blendfile:
+The Blendfile, named Blendfile.yaml by default, is the configuration file
+that tells Blender which source files are combined into which output files.
+The file uses the YAML format. The output file is listed as hash key and
+source files are the hash values as an array. Here is a sample Blendfile:
 
-# blender.yaml for boldpx.com
+# Blendfile.yaml for boldpx.com
 _behavior/_global-min.js:
   - _vendor/jquery/jquery.js
   - _vendor/shadowbox/src/js/adapter/shadowbox-jquery.js
@@ -44,7 +46,7 @@ In your site directory run 'blend' to minify CSS and JavaScript.
   blend
 
 Other examples:
-  blend -f site/blender.yaml
+  blend -f public/Blendfile.yaml
   blend -t css
   blend -t css -d
   blend --yui='--preserve-semi'
