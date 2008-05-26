@@ -1,9 +1,11 @@
+= Front-End Blender
+
 == What is Blender?
 
 Blender is like ant or make for the front-end. It aggregates and compresses
 CSS and/or JavaScript assets for a site into efficient, production-ready files.
 
-== Blendfile
+== The Blendfile
 
 The Blendfile, named Blendfile.yaml by default, is the configuration file
 that tells Blender which source files are combined into which output files.
