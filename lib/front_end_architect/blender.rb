@@ -11,6 +11,7 @@ require 'benchmark'
 require 'mime/types'
 require 'find'
 require 'pathname'
+require 'zlib'
 
 module FrontEndArchitect
   class Blender
@@ -183,12 +184,21 @@ module FrontEndArchitect
               end
             end
           end
-          
+
           output_file << output
         end
       end
       
       puts output_name
+      
+      if @options[:gzip]
+        output_gzip = output_name + ".gz"
+        Zlib::GzipWriter.open(output_gzip) do |gz|
+          gz.write(File.read(output_name))
+        end
+        
+        puts output_gzip
+      end
     end
     
     def make_data_uri(content, content_type)

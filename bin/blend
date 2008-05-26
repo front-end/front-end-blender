@@ -21,6 +21,7 @@ opts = OptionParser.new do |opts|
   opts.on(           '--force',       String,      "Force blending when source files aren't newer than output files") {    options[:force]     = true                            }
   opts.on(           '--yui=YUIOPTS', String,      "Pass arguments to YUI Compressor")                                {|o| options[:yuiopts]   = o                               }
   opts.on('-g',      '--generate',    String,      "Generate a stub Blendfile")                                       {    options[:generate]  = true                            }
+  opts.on('-z',      '--gzip',        String,      "Gzip the asset files.")                                           {    options[:gzip]      = true                            }
   
   opts.parse!(ARGV) rescue return false
 end
