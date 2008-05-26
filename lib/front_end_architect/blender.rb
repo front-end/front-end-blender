@@ -115,26 +115,41 @@ module FrontEndArchitect
     def create_output(output_name, sources, type)
       File.open(output_name, 'w') do |output_file|
         output = ''
+        data_sources = []
+        
         # Determine full path of the output file
         output_path = Pathname.new(File.expand_path(File.dirname(output_name)))
-        
+
         sources.each do |i|
           # Determine full path of input file
           input_path = Pathname.new(File.dirname(i))
           
-          if (output_path==input_path)
-            output << IO.read(i)
-          else
-            pre_output = IO.read(i)
+          if (File.extname(i) == ".css")
+            if (output_path==input_path)
+              pre_output = IO.read(i)
+              if @options[:data]
+                pre_output = pre_output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do |uri|
+                  new_path = File.expand_path($1, File.dirname(i))
+                  %Q!url('#{new_path}')!
+                end
+              end
+              output << pre_output
+            else
+              pre_output = IO.read(i)
             
-            # Find all url(.ext) in file and rewrite relative url from output directory
-            pre_output = pre_output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
-              asset_path = Pathname.new(File.expand_path($1.gsub!("../", "")))
-              new_path = asset_path.relative_path_from(output_path)
-              %Q!url("#{new_path}")!
+              # Find all url(.ext) in file and rewrite relative url from output directory
+              pre_output = pre_output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
+                asset_path = Pathname.new(File.expand_path($1, File.dirname(i)))
+                if @options[:data]
+                  new_path = File.expand_path($1, File.dirname(i))
+                else 
+                  new_path = asset_path.relative_path_from(output_path)
+                end
+                %Q!url('#{new_path}')!
+              end
+            
+              output << pre_output
             end
-            
-            output << pre_output
           end
         end
         
@@ -152,18 +167,12 @@ module FrontEndArchitect
             output.gsub! '/**/;}', '/**/}' # Workaround for YUI Compressor Bug #1961175
             
             if @options[:data]
-              output = output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
-                uri = $1
-                
-                # Make the URI absolute instead of relative. TODO Seems kinda hacky is there a better way?
-                uri.gsub! "../", ""
-                
+              count = 0
+              output = output.gsub(/url\(['"]?([^?']+)["']+\)/im) do
                 # Figure out the mime type.
-                mime_type = MIME::Types.type_for(uri)
-                
-                url_contents = make_data_uri(IO.read(uri), mime_type[0])
-                
-                %Q!url("#{url_contents}")!
+                mime_type = MIME::Types.type_for($1)
+                url_contents = make_data_uri(IO.read($1), mime_type[0])
+                %Q!url('#{url_contents}')!
               end
             end
           end
