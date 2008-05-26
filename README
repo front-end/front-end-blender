@@ -33,12 +33,13 @@ source files are the hash values as an array. Here is a sample Blendfile:
   Usage: blend [options]
     -h, --help                       Show this message
     -V, --version                    Prints Blender's version number
+    -g, --generate                   Generate a stub Blendfile
     -f, --file FILE                  Use given Blendfile
     -t, --type TYPE                  Select file type to blend (css, js)
-    -d, --data                       Convert url(image.ext) to url(data:) in CSS files EXPERIMENTAL
         --force                      Force blending when source files aren't newer than output files
         --yui=YUIOPTS                Pass arguments to YUI Compressor
-    -g, --generate                   Generate a stub Blendfile
+    -d, --data                       Convert url(file.ext) to url(data:) in CSS files EXPERIMENTAL
+    -z, --gzip                       Also create gzip output files
 
 == Examples
 
