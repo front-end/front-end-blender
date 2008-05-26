@@ -56,6 +56,10 @@ To install the rubygem, run the following at the command line:
 
 Java, v1.4 or greater is required
 
+Ruby installation instructions for your platform can be found here: http://www.ruby-lang.org/en/downloads/
+Instructions for downloading & installing rubygems can be found here: http://rubygems.org/read/chapter/3
+Download and install Java from here: http://java.com/en/
+
 == License
 
 Copyright (c) 2008 Chris Griego
