@@ -12,25 +12,25 @@ that tells Blender which source files are combined into which output files.
 The file uses the YAML format. The output file is listed as hash key and
 source files are the hash values as an array. Here is a sample Blendfile:
 
-# Blendfile.yaml for boldpx.com
-_behavior/_global-min.js:
-  - _vendor/jquery/jquery.js
-  - _vendor/shadowbox/src/js/adapter/shadowbox-jquery.js
-  - _vendor/shadowbox/src/js/shadowbox.js
-  - _behavior/_global.js
-
-_style/_global-min.css:
-  - _vendor/shadowbox/src/css/shadowbox.css
-  - _style/_global/typography.css
-  - _style/_global/typography-print.css
-  - _style/_global/colors.css
-  - _style/_global/colors-print.css
-  - _style/_global/layout-screen.css
-  - _style/_global/layout-print.css
+  # Blendfile.yaml for boldpx.com
+  _behavior/_global-min.js:
+    - _vendor/jquery/jquery.js
+    - _vendor/shadowbox/src/js/adapter/shadowbox-jquery.js
+    - _vendor/shadowbox/src/js/shadowbox.js
+    - _behavior/_global.js
+  
+  _style/_global-min.css:
+    - _vendor/shadowbox/src/css/shadowbox.css
+    - _style/_global/typography.css
+    - _style/_global/typography-print.css
+    - _style/_global/colors.css
+    - _style/_global/colors-print.css
+    - _style/_global/layout-screen.css
+    - _style/_global/layout-print.css
 
 == Usage
 
-Usage: blend [options]
+  Usage: blend [options]
     -h, --help                       Show this message
     -V, --version                    Prints Blender's version number
     -f, --file FILE                  Use given Blendfile
