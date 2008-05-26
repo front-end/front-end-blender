@@ -139,10 +139,10 @@ module FrontEndArchitect
             
               # Find all url(.ext) in file and rewrite relative url from output directory
               pre_output = pre_output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
-                asset_path = Pathname.new(File.expand_path($1, File.dirname(i)))
                 if @options[:data]
                   new_path = File.expand_path($1, File.dirname(i))
                 else 
+                  asset_path = Pathname.new(File.expand_path($1, File.dirname(i)))
                   new_path = asset_path.relative_path_from(output_path)
                 end
                 %Q!url('#{new_path}')!
@@ -150,6 +150,8 @@ module FrontEndArchitect
             
               output << pre_output
             end
+          else 
+            output << IO.read(i)
           end
         end
         
