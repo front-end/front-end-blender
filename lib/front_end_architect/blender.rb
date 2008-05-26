@@ -81,7 +81,7 @@ module FrontEndArchitect
       blend_files = Hash.new
       
       Find.find(Dir.getwd) do |f|
-        f.gsub!(Dir.getwd.to_s+"/", "")
+        f.gsub!(Dir.getwd.to_s + "/", "")
         
         if File.extname(f) == ".css"
           file = f.split(".css")
@@ -114,12 +114,12 @@ module FrontEndArchitect
     # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
     def create_output(output_name, sources, type)
       File.open(output_name, 'w') do |output_file|
-        output = ''
+        output       = ''
         data_sources = []
         
         # Determine full path of the output file
         output_path = Pathname.new(File.expand_path(File.dirname(output_name)))
-
+        
         sources.each do |i|
           # Determine full path of input file
           input_path = Pathname.new(File.dirname(i))
@@ -127,27 +127,31 @@ module FrontEndArchitect
           if (File.extname(i) == ".css")
             if (output_path==input_path)
               pre_output = IO.read(i)
+              
               if @options[:data]
-                pre_output = pre_output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do |uri|
-                  new_path = File.expand_path($1, File.dirname(i))
+                pre_output = pre_output.gsub(/url\((['"]?)([^?']+)\1\)/im) do |uri|
+                  new_path = File.expand_path($2, File.dirname(i))
                   %Q!url('#{new_path}')!
                 end
               end
+              
               output << pre_output
             else
               pre_output = IO.read(i)
-            
+              
               # Find all url(.ext) in file and rewrite relative url from output directory
-              pre_output = pre_output.gsub(/url\(['"]?([^?']+)['"]+\)/im) do
+              pre_output = pre_output.gsub(/url\((['"]?)([^?']+)\1\)/im) do
                 asset_path = Pathname.new(File.expand_path($1, File.dirname(i)))
+                
                 if @options[:data]
-                  new_path = File.expand_path($1, File.dirname(i))
+                  new_path = File.expand_path($2, File.dirname(i))
                 else 
                   new_path = asset_path.relative_path_from(output_path)
                 end
+                
                 %Q!url('#{new_path}')!
               end
-            
+              
               output << pre_output
             end
           end
@@ -168,10 +172,12 @@ module FrontEndArchitect
             
             if @options[:data]
               count = 0
-              output = output.gsub(/url\(['"]?([^?']+)["']+\)/im) do
+              
+              output = output.gsub(/url\((['"]?)([^?']+)\1\)/im) do
                 # Figure out the mime type.
-                mime_type = MIME::Types.type_for($1)
-                url_contents = make_data_uri(IO.read($1), mime_type[0])
+                mime_type    = MIME::Types.type_for($2)
+                url_contents = make_data_uri(IO.read($2), mime_type[0])
+                
                 %Q!url('#{url_contents}')!
               end
             end
