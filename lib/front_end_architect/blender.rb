@@ -170,7 +170,7 @@ module FrontEndArchitect
           
           if File.extname(output_name) == ".css"
             output.gsub! ' and(', ' and (' # Workaround for YUI Compressor Bug #1938329
-            output.gsub! '/**/;}', '/**/}' # Workaround for YUI Compressor Bug #1961175
+            output.gsub! '*/;}', '*/}'     # Workaround for YUI Compressor Bug #1961175
             
             if @options[:data]
               count = 0
