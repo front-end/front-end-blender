@@ -43,16 +43,23 @@ module FrontEndArchitect
         Dir.chdir(File.dirname(@options[:blendfile]))
         
         blender.each do |output_name, sources|
-          output_new = false
+          output_new       = false
+          gzip_output_name = output_name + '.gz'
           
           # Checks the type flag and if the current file meets the type requirements continues
           if output_name.match "." + @options[:file_type].to_s
             file_type = output_name.match(/\.css/) ? "css" : "js"
             
             # Checks if output file exists and checks the mtimes of the source files to the output file if new creates a new file
-            if File.exists? output_name
+            if File.exists?(output_name) && (!@options[:gzip] || File.exists?(gzip_output_name))
+              output_files = []
+              output_files << File.mtime(output_name)
+              output_files << File.mtime(gzip_output_name) if @options[:gzip] && File.exists?(gzip_output_name)
+              
+              oldest_output = output_files.sort.first
+              
               sources.each do |i|
-                if File.mtime(i) > File.mtime(output_name)
+                if File.mtime(i) > oldest_output
                   output_new = true
                   break
                 end
@@ -62,6 +69,7 @@ module FrontEndArchitect
                 create_output(output_name, sources, file_type)
               else
                 puts "Skipping: #{output_name}"
+                puts "Skipping: #{gzip_output_name}" if @options[:gzip]
               end
             else
               create_output(output_name, sources, file_type)
@@ -112,10 +120,10 @@ module FrontEndArchitect
     
     protected
     
-    # TODO Change to work with directory hashes (css/: [ colors.css, layout.css ])
     def create_output(output_name, sources, type)
+      output = ''
+      
       File.open(output_name, 'w') do |output_file|
-        output       = ''
         data_sources = []
         
         # Determine full path of the output file
@@ -126,7 +134,7 @@ module FrontEndArchitect
           input_path = Pathname.new(File.dirname(i))
           
           if (File.extname(i) == ".css")
-            if (output_path==input_path)
+            if (output_path == input_path)
               pre_output = IO.read(i)
               
               if @options[:data]
@@ -176,7 +184,6 @@ module FrontEndArchitect
               count = 0
               
               output = output.gsub(/url\((['"]?)([^?']+)\1\)/im) do
-                # Figure out the mime type.
                 mime_type    = MIME::Types.type_for($2)
                 url_contents = make_data_uri(IO.read($2), mime_type[0])
                 
@@ -184,7 +191,7 @@ module FrontEndArchitect
               end
             end
           end
-
+          
           output_file << output
         end
       end
@@ -193,8 +200,9 @@ module FrontEndArchitect
       
       if @options[:gzip]
         output_gzip = output_name + ".gz"
+        
         Zlib::GzipWriter.open(output_gzip) do |gz|
-          gz.write(File.read(output_name))
+          gz.write(output)
         end
         
         puts output_gzip
