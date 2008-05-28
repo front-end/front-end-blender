@@ -132,34 +132,41 @@ module FrontEndArchitect
         sources.each do |i|
           # Determine full path of input file
           input_path = Pathname.new(File.dirname(i))
-          
           if (File.extname(i) == ".css")
+            pre_output = IO.read(i)
+
+            pre_output = pre_output.gsub(/@import(?: url\(| )(['"])([^?'"]+)\1\)?(?:[^?;]+)?;/im) do |import|
+              if (output_path != input_path)
+                asset_path = Pathname.new(File.expand_path($2, File.dirname(i)))
+                new_path = asset_path.relative_path_from(output_path)
+                import.gsub!($2, new_path)
+              end
+              output.insert(0, import)
+              %Q!!
+            end
+            
             if (output_path == input_path)
-              pre_output = IO.read(i)
-              
               if @options[:data]
-                pre_output = pre_output.gsub(/url\((['"]?)([^?']+)\1\)/im) do |uri|
+                pre_output = pre_output.gsub(/url\((['"]?)([^?'"]+)\1\)/im) do |uri|
                   new_path = File.expand_path($2, File.dirname(i))
-                  %Q!url('#{new_path}')!
+                  %Q!url("#{new_path}")!
                 end
               end
               
               output << pre_output
             else
-              pre_output = IO.read(i)
-              
-              # Find all url(.ext) in file and rewrite relative url from output directory
-              pre_output = pre_output.gsub(/url\((['"]?)([^?']+)\1\)/im) do
+              # Find all url(.ext) in file and rewrite relative url from output directory.
+              pre_output = pre_output.gsub(/url\((['"]?)([^?'"]+)\1\)/im) do
                 if @options[:data]
+                  # if doing data conversion rewrite url as an absolute path.
                   new_path = File.expand_path($2, File.dirname(i))
-                else 
+                else
                   asset_path = Pathname.new(File.expand_path($1, File.dirname(i)))
                   new_path = asset_path.relative_path_from(output_path)
                 end
                 
-                %Q!url('#{new_path}')!
+                %Q!url("#{new_path}")!
               end
-              
               output << pre_output
             end
           else 
@@ -181,17 +188,18 @@ module FrontEndArchitect
             output.gsub! '*/;}', '*/}'     # Workaround for YUI Compressor Bug #1961175
             
             if @options[:data]
-              count = 0
-              
-              output = output.gsub(/url\((['"]?)([^?']+)\1\)/im) do
-                mime_type    = MIME::Types.type_for($2)
-                url_contents = make_data_uri(IO.read($2), mime_type[0])
-                
-                %Q!url('#{url_contents}')!
+              output = output.gsub(/url\((['"]?)([^?'"]+)\1\)/im) do
+                if (!$2.include?(".css"))
+                  mime_type    = MIME::Types.type_for($2)
+                  url_contents = make_data_uri(IO.read($2), mime_type[0])
+                else
+                  url_contents = $2
+                end
+                  %Q!url("#{url_contents}")!
               end
             end
           end
-          
+
           output_file << output
         end
       end
