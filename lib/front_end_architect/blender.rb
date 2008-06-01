@@ -28,14 +28,9 @@ module FrontEndArchitect
     end
     
     def blend
-      if @options[:generate]
-        create_blendfile
-      end
-      
       elapsed = Benchmark.realtime do
         unless File.exists? @options[:blendfile]
-          puts "Couldn't find '#{@options[:blendfile]}'"
-          exit 1
+          raise "Couldn't find '#{@options[:blendfile]}'"
         end
         
         blender = YAML::load_file @options[:blendfile]
@@ -83,8 +78,7 @@ module FrontEndArchitect
     
     def generate
       if File.exists?(@options[:blendfile]) && !@options[:force]
-        puts "'#{@options[:blendfile]}' already exists"
-        exit 1
+        raise "'#{@options[:blendfile]}' already exists"
       end
       
       blend_files = Hash.new
@@ -114,8 +108,6 @@ module FrontEndArchitect
           blendfile << "#{block[0]}:\r\n  - #{block[1]}\r\n"
         end
       end
-      
-      exit 0
     end
     
     protected
