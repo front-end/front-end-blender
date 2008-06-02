@@ -37,7 +37,11 @@ module FrontEndArchitect
         
         Dir.chdir(File.dirname(@options[:blendfile]))
         
+        blender = flatten_blendfile(blender)
+        
         blender.each do |output_name, sources|
+          output_name = Pathname.new(output_name).cleanpath.to_s
+          
           output_new       = false
           gzip_output_name = output_name + '.gz'
           
@@ -112,6 +116,26 @@ module FrontEndArchitect
     
     protected
     
+    def flatten_blendfile(value, key=nil, context=[])
+      if value.is_a? Hash
+        context << key unless key.nil?
+        
+        new_hash = {}
+        
+        value.each do |k, v|
+          new_hash.merge! flatten_blendfile(v, k, context.dup)
+        end
+        
+        new_hash
+      else
+        value.each_index do |i|
+          value[i] = (context.join(File::SEPARATOR) + File::SEPARATOR + value[i])
+        end
+        
+        return { (context.join(File::SEPARATOR) + File::SEPARATOR + key) => value }
+      end
+    end
+    
     def create_output(output_name, sources, type)
       output = ''
       
@@ -126,7 +150,7 @@ module FrontEndArchitect
           input_path = Pathname.new(File.dirname(i))
           if (File.extname(i) == ".css")
             pre_output = IO.read(i)
-
+            
             pre_output = pre_output.gsub(/@import(?: url\(| )(['"])([^?'"]+)\1\)?(?:[^?;]+)?;/im) do |import|
               if (output_path != input_path)
                 asset_path = Pathname.new(File.expand_path($2, File.dirname(i)))
@@ -177,7 +201,7 @@ module FrontEndArchitect
           
           if File.extname(output_name) == ".css"
             output.gsub! ' and(', ' and (' # Workaround for YUI Compressor Bug #1938329
-            output.gsub! '*/;}', '*/}'     # Workaround for YUI Compressor Bug #1961175
+            output.gsub! '*/;}',  '*/}'    # Workaround for YUI Compressor Bug #1961175
             
             if @options[:data]
               output = output.gsub(/url\((['"]?)([^?'"]+)\1\)/im) do
@@ -191,7 +215,7 @@ module FrontEndArchitect
               end
             end
           end
-
+          
           output_file << output
         end
       end
