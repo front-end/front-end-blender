@@ -15,7 +15,10 @@ require 'zlib'
 
 module FrontEndArchitect
   class Blender
-    VERSION = '0.10'
+    VERSION      = '0.10'
+    FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^?]+)\1,[^?]+\1\);/im
+    IMPORT_REGEX = /@import(?: url\(| )(['"])([^?'"]+)\1\)?(?:[^?;]+)?;/im
+    URL_REGEX    = /url\((['"]?)([^?'"]+)\1\)/im
     
     DEFAULT_OPTIONS = {
       :blendfile => 'Blendfile.yaml',
@@ -148,37 +151,82 @@ module FrontEndArchitect
         sources.each do |i|
           # Determine full path of input file
           input_path = Pathname.new(File.dirname(i))
+          
           if (File.extname(i) == ".css")
             pre_output = IO.read(i)
             
-            pre_output = pre_output.gsub(/@import(?: url\(| )(['"])([^?'"]+)\1\)?(?:[^?;]+)?;/im) do |import|
+            pre_output = pre_output.gsub(IMPORT_REGEX) do |import|
+              uri = $2
+              asset_path = Pathname.new(File.expand_path(uri, File.dirname(i)))
+              if (@options[:cache_buster])
+                if @options[:cache_buster].empty?
+                  buster = File.mtime(asset_path).to_i
+                else
+                  buster = @options[:cache_buster]
+                end
+              end
+              
               if (output_path != input_path)
-                asset_path = Pathname.new(File.expand_path($2, File.dirname(i)))
                 new_path = asset_path.relative_path_from(output_path)
-                import.gsub!($2, new_path)
+                if (@options[:cache_buster])
+                  cache_buster = new_path.to_s+"?#{buster}"
+                  puts cache_buster
+                  import.gsub!(uri, cache_buster)
+                else
+                  import.gsub!(uri, new_path)
+                end
+              else
+                if (@options[:cache_buster])
+                  cache_buster = asset_path.to_s+"?#{buster}"
+                  import.gsub!(uri, cache_buster)
+                end
               end
               output.insert(0, import)
               %Q!!
             end
             
             if (output_path == input_path)
+              
               if @options[:data]
-                pre_output = pre_output.gsub(/url\((['"]?)([^?'"]+)\1\)/im) do |uri|
+                pre_output = pre_output.gsub(URL_REGEX) do |uri|
                   new_path = File.expand_path($2, File.dirname(i))
                   %Q!url("#{new_path}")!
                 end
+              elsif @options[:cache_buster]
+                pre_output = pre_output.gsub(URL_REGEX) do
+                  uri = $2
+                  if (@options[:cache_buster])
+                    if @options[:cache_buster].empty?
+                      buster = File.mtime(uri).to_i
+                    else
+                      buster = @options[:cache_buster]
+                    end
+                    
+                    cache_buster = uri.to_s+"?#{buster}"
+                  end
+                end
               end
-              
               output << pre_output
             else
               # Find all url(.ext) in file and rewrite relative url from output directory.
-              pre_output = pre_output.gsub(/url\((['"]?)([^?'"]+)\1\)/im) do
+              pre_output = pre_output.gsub(URL_REGEX) do
+                uri = $2
                 if @options[:data]
                   # if doing data conversion rewrite url as an absolute path.
-                  new_path = File.expand_path($2, File.dirname(i))
+                  new_path = File.expand_path(uri, File.dirname(i))
                 else
-                  asset_path = Pathname.new(File.expand_path($1, File.dirname(i)))
+                  asset_path = Pathname.new(File.expand_path(uri, File.dirname(i)))
                   new_path = asset_path.relative_path_from(output_path)
+                  if (@options[:cache_buster])
+                    if (@options[:cache_buster]).empty?
+                      buster = File.mtime(asset_path).to_i
+                    else 
+                      buster = @options[:cache_buster]
+                    end
+                    
+                    new_path = new_path.to_s+"?#{buster}"
+                    puts new_path
+                  end
                 end
                 
                 %Q!url("#{new_path}")!
@@ -204,7 +252,7 @@ module FrontEndArchitect
             output.gsub! '*/;}',  '*/}'    # Workaround for YUI Compressor Bug #1961175
             
             if @options[:data]
-              output = output.gsub(/url\((['"]?)([^?'"]+)\1\)/im) do
+              output = output.gsub(URL_REGEX) do
                 if (!$2.include?(".css"))
                   mime_type    = MIME::Types.type_for($2)
                   url_contents = make_data_uri(IO.read($2), mime_type[0])
