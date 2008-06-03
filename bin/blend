@@ -22,7 +22,7 @@ opts = OptionParser.new do |opts|
   opts.on(                   '--yui=YUIOPTS',           String,      "Pass arguments to YUI Compressor")                                {|o| options[:yuiopts]      = o                            }
   opts.on('-d',              '--data',                  String,      "Convert url(file.ext) to url(data:) in CSS files EXPERIMENTAL")   {    options[:data]         = true                         }
   opts.on('-z',              '--gzip',                  String,      "Also create gzip output files EXPERIMENTAL")                      {    options[:gzip]         = true                         }
-  opts.on('-c [BUSTER]',     '--cache-buster [BUSTER]', String,      "Append cache buster to file names in css")                        {|b| options[:cache_buster] = b.nil? ? "" : b              }
+  opts.on('-c [BUSTER]',     '--cache-buster [BUSTER]', String,      "Append cache buster to file names in CSS")                        {|b| options[:cache_buster] = b.nil? ? "" : b              }
 
   opts.parse!(ARGV) rescue return false
 end
