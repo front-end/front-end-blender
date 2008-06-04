@@ -17,9 +17,9 @@ module FrontEndArchitect
   class Blender
     VERSION      = '0.11'
     
-    FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^?]+)\1,[^?]+\1\);/im
-    IMPORT_REGEX = /@import(?: url\(| )(['"])([^?'"]+)\1\)?(?:[^?;]+)?;/im
-    URL_REGEX    = /url\((['"]?)([^?'"]+)\1\)/im
+    FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
+    IMPORT_REGEX = /@import(?: url\(| )(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1\)?(?:[^?;]+)?;/im
+    URL_REGEX    = /url\((['"]?)([^\?'"]+)(\?(?:[^'"]+)?)?\1\)/im
     
     DEFAULT_OPTIONS = {
       :blendfile => 'Blendfile.yaml',
@@ -32,9 +32,6 @@ module FrontEndArchitect
     end
     
     def blend
-      # TODO This currently always fails and outputs the STDOUT from the java command
-      # raise "Blender requires Java, v1.4 or greater, to be installed for YUI Compressor" unless system('java')
-      
       elapsed = Benchmark.realtime do
         unless File.exists? @options[:blendfile]
           raise "Couldn't find '#{@options[:blendfile]}'"
@@ -138,11 +135,14 @@ module FrontEndArchitect
         
         new_hash
       else
+        prefix = context.join(File::SEPARATOR)
+        prefix += File::SEPARATOR unless context.empty?
+        
         value.each_index do |i|
-          value[i] = (context.join(File::SEPARATOR) + File::SEPARATOR + value[i])
+          value[i] = prefix + value[i]
         end
         
-        return { (context.join(File::SEPARATOR) + File::SEPARATOR + key) => value }
+        return { (prefix + key) => value }
       end
     end
     
@@ -150,107 +150,22 @@ module FrontEndArchitect
       output = ''
       
       File.open(output_name, 'w') do |output_file|
-        data_sources = []
-        
         # Determine full path of the output file
         output_path = Pathname.new(File.expand_path(File.dirname(output_name)))
+        imports = ''
         
         sources.each do |i|
-          # Determine full path of input file
-          input_path = Pathname.new(File.dirname(i))
-          
-          if (File.extname(i) == '.css')
-            pre_output = IO.read(i)
-            
-            pre_output = pre_output.gsub(IMPORT_REGEX) do |import|
-              uri        = $2
-              asset_path = Pathname.new(File.expand_path(uri, File.dirname(i)))
-              
-              if (@options[:cache_buster])
-                if @options[:cache_buster] == :mtime
-                  buster = File.mtime(asset_path).to_i
-                else
-                  buster = @options[:cache_buster]
-                end
-              end
-              
-              if (output_path != input_path)
-                new_path = asset_path.relative_path_from(output_path)
-                
-                if (@options[:cache_buster])
-                  cache_buster = new_path.to_s + "?#{buster}"
-                  
-                  import.gsub!(uri, cache_buster)
-                else
-                  import.gsub!(uri, new_path)
-                end
-              else
-                if (@options[:cache_buster])
-                  cache_buster = asset_path.to_s + "?#{buster}"
-                  
-                  import.gsub!(uri, cache_buster)
-                end
-              end
-              
-              output.insert(0, import)
-              
-              %Q!!
-            end
-            
-            if (output_path == input_path)
-              if @options[:data]
-                pre_output = pre_output.gsub(URL_REGEX) do |uri|
-                  new_path = File.expand_path($2, File.dirname(i))
-                  %Q!url("#{new_path}")!
-                end
-              elsif @options[:cache_buster]
-                pre_output = pre_output.gsub(URL_REGEX) do
-                  uri = $2
-                  
-                  if (@options[:cache_buster])
-                    if @options[:cache_buster] == :mtime
-                      buster = File.mtime(uri).to_i
-                    else
-                      buster = @options[:cache_buster]
-                    end
-                    
-                    cache_buster = uri.to_s + "?#{buster}"
-                  end
-                end
-              end
-              
-              output << pre_output
-            else
-              # Find all url(.ext) in file and rewrite relative url from output directory
-              pre_output = pre_output.gsub(URL_REGEX) do
-                uri = $2
-                
-                if @options[:data]
-                  # if doing data conversion rewrite url as an absolute path
-                  new_path = File.expand_path(uri, File.dirname(i))
-                else
-                  asset_path = Pathname.new(File.expand_path(uri, File.dirname(i)))
-                  new_path   = asset_path.relative_path_from(output_path)
-                  
-                  if @options[:cache_buster]
-                    if @options[:cache_buster] == :mtime
-                      buster = File.mtime(asset_path).to_i
-                    else 
-                      buster = @options[:cache_buster]
-                    end
-                    
-                    new_path = new_path.to_s + "?#{buster}"
-                  end
-                end
-                
-                %Q!url("#{new_path}")!
-              end
-              
-              output << pre_output
-            end
-          else 
+          if File.extname(i) == '.css'
+            processed_output, processed_imports = process_css(i, output_path)
+            output  << processed_output
+            imports << processed_imports
+          else
             output << IO.read(i)
           end
+        end
+        
+        if File.extname(output_name) == '.css' && !imports.empty?
+          output.insert(0, imports)
         end
         
         # Compress
@@ -274,12 +189,16 @@ module FrontEndArchitect
                 else
                   url_contents = $2
                 end
-                  %Q!url("#{url_contents}")!
+                  %Q!url(#{url_contents})!
               end
             end
           end
           
           output_file << output
+        end
+        
+        if $? == 32512 # command not found
+          raise "\nBlender requires Java, v1.4 or greater, to be installed for YUI Compressor"
         end
       end
       
@@ -294,6 +213,113 @@ module FrontEndArchitect
         
         puts output_gzip
       end
+    end
+    
+    def process_css(input_file, output_path)
+      # Determine full path of input file
+      input_path    = Pathname.new(File.dirname(input_file))
+      input         = IO.read(input_file)
+      found_imports = ''
+      
+      # Find filter statements and append cache busters to URLs
+      if @options[:cache_buster]
+        input = input.gsub(FILTER_REGEX) do |filter|
+          uri       = $2
+          full_path = File.expand_path($2, File.dirname(input_file))
+          buster    = make_cache_buster(full_path, $3)
+          new_path  = uri.to_s + buster
+          
+          %Q!filter='#{new_path}'!
+        end
+      end
+      
+      # Handle @import statements URL rewrite and adding cache busters
+      input = input.gsub(IMPORT_REGEX) do |import|
+        uri        = $2
+        asset_path = Pathname.new(File.expand_path(uri, input_path))
+        
+        if (output_path != input_path)
+          new_path = asset_path.relative_path_from(output_path)
+          
+          if @options[:cache_buster]
+            buster = make_cache_buster(asset_path, $3)
+            import.gsub!(uri, new_path.to_s + buster)
+          else
+            import.gsub!(uri, new_path)
+          end
+        else
+          if @options[:cache_buster]
+            buster = make_cache_buster(asset_path, $3)
+            import.gsub!(uri, asset_path.to_s + buster)
+          end
+        end
+        
+        found_imports << import
+        
+        %Q!!
+      end
+      
+      if output_path == input_path
+        if @options[:data]
+          input = input.gsub(URL_REGEX) do |uri|
+            new_path = File.expand_path($2, File.dirname(input_file))
+            
+            %Q!url(#{new_path}#{$3})!
+          end
+        elsif @options[:cache_buster]
+          input = input.gsub(URL_REGEX) do
+            uri = $2
+            
+            if (@options[:cache_buster])
+              buster   = make_cache_buster(uri, $3)
+              new_path = uri.to_s + buster
+            end
+            
+            %Q!url(#{new_path})!
+          end
+        end
+        
+        return input, found_imports
+      else
+        # Find all url(.ext) in file and rewrite relative url from output directory
+        input = input.gsub(URL_REGEX) do |url|
+          uri = $2
+          
+          if @options[:data]
+            # If doing data conversion rewrite url as an absolute path
+            new_path = File.expand_path(uri, File.dirname(input_file))
+          else
+            asset_path = Pathname.new(File.expand_path(uri, File.dirname(input_path)))
+            new_path   = asset_path.relative_path_from(output_path)
+            
+            if @options[:cache_buster]
+              buster   = make_cache_buster(asset_path, $3)
+              new_path = new_path.to_s+buster
+            end
+          end
+          
+          %Q!url(#{new_path})!
+        end
+        
+        return input, found_imports
+      end
+    end
+    
+    def make_cache_buster(asset_path, query_string)
+      unless query_string.nil?
+        query_string += '&'
+      else
+        query_string = '?'
+      end
+      
+      if @options[:cache_buster] == :mtime
+        file_mtime = File.mtime(asset_path).to_i
+        buster = query_string + file_mtime.to_s
+      else
+        buster = query_string + @options[:cache_buster]
+      end
+      
+      return buster
     end
     
     def make_data_uri(content, content_type)
