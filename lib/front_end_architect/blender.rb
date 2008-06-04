@@ -4,6 +4,8 @@
 # Blender is freely distributable under the terms of an MIT-style license.
 # For details, see http://www.opensource.org/licenses/mit-license.php
 
+# TODO Nearly all file name comparisons should be case-insensitive
+
 require 'rubygems'
 require 'yaml'
 require 'base64'
@@ -98,6 +100,7 @@ module FrontEndArchitect
           Find.prune
         elsif !(basename.match(/[-.](pack|min)\.(css|js)$/) || basename.match(/^(sifr\.js|ext\.js|mootools.*\.js)$/))
           # TODO Test for 'pack.js' and 'min.css' where the folder name serves as the identifier
+          # TODO Check file contents instead of name for minification (port YSlow's isMinified)
           f.gsub!(Dir.getwd.to_s + '/', '')
           
           if File.extname(f) == '.css'
