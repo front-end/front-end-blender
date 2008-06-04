@@ -15,7 +15,8 @@ require 'zlib'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.10'
+    VERSION      = '0.11'
+    
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^?]+)\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"])([^?'"]+)\1\)?(?:[^?;]+)?;/im
     URL_REGEX    = /url\((['"]?)([^?'"]+)\1\)/im
@@ -31,6 +32,9 @@ module FrontEndArchitect
     end
     
     def blend
+      # TODO This currently always fails and outputs the STDOUT from the java command
+      # raise "Blender requires Java, v1.4 or greater, to be installed for YUI Compressor" unless system('java')
+      
       elapsed = Benchmark.realtime do
         unless File.exists? @options[:blendfile]
           raise "Couldn't find '#{@options[:blendfile]}'"
@@ -49,8 +53,8 @@ module FrontEndArchitect
           gzip_output_name = output_name + '.gz'
           
           # Checks the type flag and if the current file meets the type requirements continues
-          if output_name.match "." + @options[:file_type].to_s
-            file_type = output_name.match(/\.css/) ? "css" : "js"
+          if output_name.match '.' + @options[:file_type].to_s
+            file_type = output_name.match(/\.css/) ? 'css' : 'js'
             
             # Checks if output file exists and checks the mtimes of the source files to the output file if new creates a new file
             if File.exists?(output_name) && (!@options[:gzip] || File.exists?(gzip_output_name))
@@ -80,7 +84,7 @@ module FrontEndArchitect
         end
       end
       
-      puts sprintf("%.5f", elapsed) + " seconds"
+      puts sprintf('%.5f', elapsed) + ' seconds'
     end
     
     def generate
@@ -91,21 +95,24 @@ module FrontEndArchitect
       blend_files = Hash.new
       
       Find.find(Dir.getwd) do |f|
-        f.gsub!(Dir.getwd.to_s + "/", "")
+        basename = File.basename(f)
         
-        if File.extname(f) == ".css"
-          file = f.split(".css")
-          min_file = file[0] + "-min.css"
-          blend_files[min_file] = [f]
+        if FileTest.directory?(f) && (basename[0] == ?. || basename.match(/^(yui|tinymce|dojo|wp-includes|wp-admin|mint)$/) || (File.basename(f) == 'rails' && File.basename(File.dirname(f)) == 'vendor'))
+          Find.prune
+        elsif !(basename.match(/[-.](pack|min)\.(css|js)$/) || basename.match(/^(sifr\.js|ext\.js|mootools.*\.js)$/))
+          # TODO Test for 'pack.js' and 'min.css' where the folder name serves as the identifier
+          f.gsub!(Dir.getwd.to_s + '/', '')
+          
+          if File.extname(f) == '.css'
+            min_file = f.sub(/\.css$/, '-min.css')
+            
+            blend_files[min_file] = [f]
+          elsif File.extname(f) == '.js'
+            min_file = f.sub(/\.js$/, '-min.js')
+            
+            blend_files[min_file] = [f]
+          end
         end
-        
-        if File.extname(f) == ".js"
-          file = f.split(".js")
-          min_file = file[0] + "-min.js"
-          blend_files[min_file] = [f]
-        end
-        
-        Find.prune if File.basename(f).index('.') == 0
       end
       
       blend_files = blend_files.sort
@@ -152,14 +159,15 @@ module FrontEndArchitect
           # Determine full path of input file
           input_path = Pathname.new(File.dirname(i))
           
-          if (File.extname(i) == ".css")
+          if (File.extname(i) == '.css')
             pre_output = IO.read(i)
             
             pre_output = pre_output.gsub(IMPORT_REGEX) do |import|
-              uri = $2
+              uri        = $2
               asset_path = Pathname.new(File.expand_path(uri, File.dirname(i)))
+              
               if (@options[:cache_buster])
-                if @options[:cache_buster].empty?
+                if @options[:cache_buster] == :mtime
                   buster = File.mtime(asset_path).to_i
                 else
                   buster = @options[:cache_buster]
@@ -168,25 +176,28 @@ module FrontEndArchitect
               
               if (output_path != input_path)
                 new_path = asset_path.relative_path_from(output_path)
+                
                 if (@options[:cache_buster])
-                  cache_buster = new_path.to_s+"?#{buster}"
-                  puts cache_buster
+                  cache_buster = new_path.to_s + "?#{buster}"
+                  
                   import.gsub!(uri, cache_buster)
                 else
                   import.gsub!(uri, new_path)
                 end
               else
                 if (@options[:cache_buster])
-                  cache_buster = asset_path.to_s+"?#{buster}"
+                  cache_buster = asset_path.to_s + "?#{buster}"
+                  
                   import.gsub!(uri, cache_buster)
                 end
               end
+              
               output.insert(0, import)
+              
               %Q!!
             end
             
             if (output_path == input_path)
-              
               if @options[:data]
                 pre_output = pre_output.gsub(URL_REGEX) do |uri|
                   new_path = File.expand_path($2, File.dirname(i))
@@ -195,42 +206,46 @@ module FrontEndArchitect
               elsif @options[:cache_buster]
                 pre_output = pre_output.gsub(URL_REGEX) do
                   uri = $2
+                  
                   if (@options[:cache_buster])
-                    if @options[:cache_buster].empty?
+                    if @options[:cache_buster] == :mtime
                       buster = File.mtime(uri).to_i
                     else
                       buster = @options[:cache_buster]
                     end
                     
-                    cache_buster = uri.to_s+"?#{buster}"
+                    cache_buster = uri.to_s + "?#{buster}"
                   end
                 end
               end
+              
               output << pre_output
             else
-              # Find all url(.ext) in file and rewrite relative url from output directory.
+              # Find all url(.ext) in file and rewrite relative url from output directory
               pre_output = pre_output.gsub(URL_REGEX) do
                 uri = $2
+                
                 if @options[:data]
-                  # if doing data conversion rewrite url as an absolute path.
+                  # if doing data conversion rewrite url as an absolute path
                   new_path = File.expand_path(uri, File.dirname(i))
                 else
                   asset_path = Pathname.new(File.expand_path(uri, File.dirname(i)))
-                  new_path = asset_path.relative_path_from(output_path)
-                  if (@options[:cache_buster])
-                    if (@options[:cache_buster]).empty?
+                  new_path   = asset_path.relative_path_from(output_path)
+                  
+                  if @options[:cache_buster]
+                    if @options[:cache_buster] == :mtime
                       buster = File.mtime(asset_path).to_i
                     else 
                       buster = @options[:cache_buster]
                     end
                     
-                    new_path = new_path.to_s+"?#{buster}"
-                    puts new_path
+                    new_path = new_path.to_s + "?#{buster}"
                   end
                 end
                 
                 %Q!url("#{new_path}")!
               end
+              
               output << pre_output
             end
           else 
@@ -241,19 +256,19 @@ module FrontEndArchitect
         # Compress
         libdir = File.join(File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__), *%w[.. .. lib])
         
-        IO.popen("java -jar #{libdir}/yui/yuicompressor.jar #{@options[:yuiopts]} --type #{type}", mode="r+") do |io|
+        IO.popen("java -jar #{libdir}/yui/yuicompressor.jar #{@options[:yuiopts]} --type #{type}", 'r+') do |io|
           io.write output
           io.close_write
           
           output = io.read
           
-          if File.extname(output_name) == ".css"
+          if File.extname(output_name) == '.css'
             output.gsub! ' and(', ' and (' # Workaround for YUI Compressor Bug #1938329
             output.gsub! '*/;}',  '*/}'    # Workaround for YUI Compressor Bug #1961175
             
             if @options[:data]
               output = output.gsub(URL_REGEX) do
-                if (!$2.include?(".css"))
+                if (!$2.include?('.css'))
                   mime_type    = MIME::Types.type_for($2)
                   url_contents = make_data_uri(IO.read($2), mime_type[0])
                 else
@@ -271,7 +286,7 @@ module FrontEndArchitect
       puts output_name
       
       if @options[:gzip]
-        output_gzip = output_name + ".gz"
+        output_gzip = output_name + '.gz'
         
         Zlib::GzipWriter.open(output_gzip) do |gz|
           gz.write(output)
