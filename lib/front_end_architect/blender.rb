@@ -17,8 +17,8 @@ module FrontEndArchitect
   class Blender
     VERSION      = '0.10'
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
-    IMPORT_REGEX = /@import(?: url\(| )(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1\)?(?:[^?;]+)?;/im
-    URL_REGEX    = /url\((['"]?)([^\?'"]+)(\?(?:[^'"]+)?)?\1\)/im
+    IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
+    URL_REGEX    = /url\((['"]?)([^\?'"\)]+)(\?(?:[^'"\)]+)?)?\1?\)/im
     
     DEFAULT_OPTIONS = {
       :blendfile => 'Blendfile.yaml',
@@ -216,71 +216,87 @@ module FrontEndArchitect
       if @options[:cache_buster]
         input = input.gsub(FILTER_REGEX) do |filter|
           uri = $2
-          full_path = File.expand_path($2, File.dirname(input_file))
-          buster = make_cache_buster(full_path, $3)
-          new_path = uri.to_s + buster
-          %Q!filter='#{new_path}'!
+          unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+            full_path = File.expand_path($2, File.dirname(input_file))
+            buster = make_cache_buster(full_path, $3)
+            new_path = uri.to_s + buster
+            %Q!filter='#{new_path}'!
+          else
+            %Q!filter='#{$2}#{$3}'!
         end
       end
       
       # Handle @import statements URL rewrite and adding cache busters
       input = input.gsub(IMPORT_REGEX) do |import|
         uri = $2
-        asset_path = Pathname.new(File.expand_path(uri, input_path))
-        if (output_path != input_path)
-          new_path = asset_path.relative_path_from(output_path)
-          if @options[:cache_buster]
-            buster = make_cache_buster(asset_path, $3)
-            import.gsub!(uri, new_path.to_s+buster)
+        unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+          asset_path = Pathname.new(File.expand_path(uri, input_path))
+          if (output_path != input_path)
+            new_path = asset_path.relative_path_from(output_path)
+            if @options[:cache_buster]
+              buster = make_cache_buster(asset_path, $3)
+              import.gsub!(uri, new_path.to_s+buster)
+            else
+              import.gsub!(uri, new_path)
+            end
           else
-            import.gsub!(uri, new_path)
+            if @options[:cache_buster]
+              buster = make_cache_buster(asset_path, $3)
+              import.gsub!(uri, asset_path.to_s+buster)
+            end
           end
-        else
-          if @options[:cache_buster]
-            buster = make_cache_buster(asset_path, $3)
-            import.gsub!(uri, asset_path.to_s+buster)
-          end
+          found_imports << import
+          %Q!!
         end
-        found_imports << import
-        %Q!!
       end
+      
+      return 0
       
       if output_path == input_path
         if @options[:data]
           input = input.gsub(URL_REGEX) do |uri|
-            new_path = File.expand_path($2, File.dirname(input_file))
-            %Q!url("#{new_path}#{$3}")!
+            unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+              new_path = File.expand_path($2, File.dirname(input_file))
+              %Q!url(#{new_path}#{$3})!
+            else
+              %Q!url(#{$2}#{$3})!
           end
         elsif @options[:cache_buster]
           input = input.gsub(URL_REGEX) do
-            uri = $2
-            if (@options[:cache_buster])
-              buster = make_cache_buster(uri, $3)
-              new_path = uri.to_s+buster
-            end
-            
-            %Q!url("#{new_path}")!
+            unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+              uri = $2
+              if @options[:cache_buster]
+                buster = make_cache_buster(uri, $3)
+                new_path = uri.to_s+buster
+              end
+              %Q!url(#{new_path})!
+            else
+              %Q!url(#{$2}#{$3})!
           end
         end
         
         return input, found_imports
       else
         # Find all url(.ext) in file and rewrite relative url from output directory.
-        input = input.gsub(URL_REGEX) do |url|
+        input = input.gsub(URL_REGEX) do
           uri = $2
-          if @options[:data]
-            # if doing data conversion rewrite url as an absolute path.
-            new_path = File.expand_path(uri, File.dirname(input_file))
-          else
-            asset_path = Pathname.new(File.expand_path(uri, File.dirname(input_path)))
-            new_path = asset_path.relative_path_from(output_path)
-            if @options[:cache_buster]
-              buster = make_cache_buster(asset_path, $3)
-              new_path = new_path.to_s+buster
+          unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+            if @options[:data]
+              # if doing data conversion rewrite url as an absolute path.
+              new_path = File.expand_path(uri, File.dirname(input_file))
+            else
+              asset_path = Pathname.new(File.expand_path(uri, File.dirname(input_file)))
+              new_path = asset_path.relative_path_from(output_path)
+              if @options[:cache_buster]
+                buster = make_cache_buster(asset_path, $3)
+                new_path = new_path.to_s+buster
+              else
+                new_path = new_path.to_s+$3 unless $3.nil?
+              end
             end
-          end
-          
-          %Q!url("#{new_path}")!
+            %Q!url(#{new_path})!
+          else
+            %Q!url(#{$2}#{$3})!
         end
         
         return input, found_imports
