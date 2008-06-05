@@ -12,21 +12,26 @@ that tells Blender which source files are combined into which output files.
 The file uses the YAML format. The output file is listed as hash key and
 source files are the hash values as an array. Here is a sample Blendfile:
 
-  # Blendfile.yaml for boldpx.com
-  _behavior/_global-min.js:
-    - _vendor/jquery/jquery.js
-    - _vendor/shadowbox/src/js/adapter/shadowbox-jquery.js
-    - _vendor/shadowbox/src/js/shadowbox.js
-    - _behavior/_global.js
+  # Blendfile.yaml for www.boldpx.com
+  _behavior:
+    _global-min.js:
+      - ../_vendor/jquery/jquery.js
+      - ../_vendor/shadowbox/src/js/adapter/shadowbox-jquery.js
+      - ../_vendor/shadowbox/src/js/shadowbox.js
+      - _global.js
+      - _analytics.js
+      - ../vendor/google-analytics/ga.js
   
-  _style/_global-min.css:
-    - _vendor/shadowbox/src/css/shadowbox.css
-    - _style/_global/typography.css
-    - _style/_global/typography-print.css
-    - _style/_global/colors.css
-    - _style/_global/colors-print.css
-    - _style/_global/layout-screen.css
-    - _style/_global/layout-print.css
+  _style:
+    _global:
+      min.css:
+        - ../../_vendor/shadowbox/src/css/shadowbox.css
+        - typography.css
+        - typography-print.css
+        - colors.css
+        - colors-print.css
+        - layout-screen.css
+        - layout-print.css
 
 == Usage
 
@@ -36,6 +41,7 @@ source files are the hash values as an array. Here is a sample Blendfile:
     -g, --generate                   Generate a stub Blendfile
     -f, --file FILE                  Use given Blendfile
     -t, --type TYPE                  Select file type to blend (css, js)
+    -c, --cache-buster [BUSTER]      Append cache busters to URLs in CSS, defaults to timestamps
         --force                      Force blending when source files aren't newer than output files
         --yui=YUIOPTS                Pass arguments to YUI Compressor
     -d, --data                       Convert url(file.ext) to url(data:) in CSS files EXPERIMENTAL

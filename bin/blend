@@ -18,12 +18,12 @@ opts = OptionParser.new do |opts|
   opts.on('-g',              '--generate',              String,      "Generate a stub Blendfile")                                       {    options[:generate]     = true                         }
   opts.on('-f FILE',         '--file FILE',             String,      "Use given Blendfile")                                             {|f| options[:blendfile]    = f                            }
   opts.on('-t TYPE',         '--type TYPE',             [:css, :js], "Select file type to blend (css, js)")                             {|t| options[:file_type]    = t                            }
+  opts.on('-c [BUSTER]',     '--cache-buster [BUSTER]', String,      "Append cache busters to URLs in CSS, defaults to timestamps")     {|b| options[:cache_buster] = b.nil? ? :mtime : b          }
   opts.on(                   '--force',                 String,      "Force blending when source files aren't newer than output files") {    options[:force]        = true                         }
   opts.on(                   '--yui=YUIOPTS',           String,      "Pass arguments to YUI Compressor")                                {|o| options[:yuiopts]      = o                            }
   opts.on('-d',              '--data',                  String,      "Convert url(file.ext) to url(data:) in CSS files EXPERIMENTAL")   {    options[:data]         = true                         }
   opts.on('-z',              '--gzip',                  String,      "Also create gzip output files EXPERIMENTAL")                      {    options[:gzip]         = true                         }
-  opts.on('-c [BUSTER]',     '--cache-buster [BUSTER]', String,      "Append cache buster to file names in CSS")                        {|b| options[:cache_buster] = b.nil? ? "" : b              }
-
+  
   opts.parse!(ARGV) rescue return false
 end
 
