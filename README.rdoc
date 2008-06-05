@@ -53,21 +53,23 @@ In your site directory run 'blend' to minify CSS and JavaScript.
   blend
 
 Other examples:
-  blend -f public/Blendfile.yaml
+  blend --generate
+  blend --yui='--preserve-semi'
   blend -t css
   blend -t css -d
-  blend --yui='--preserve-semi'
+  blend -f public/Blendfile.yaml
 
 == Installation
 
 To install the rubygem, run the following at the command line:
-  sudo gem install blender
+  sudo gem install mime-types
+  sudo gem install front-end-blender --source=http://gems.github.com
 
 Java, v1.4 or greater is required
 
 Ruby installation instructions for your platform can be found here: http://www.ruby-lang.org/en/downloads/
 Instructions for downloading & installing rubygems can be found here: http://rubygems.org/read/chapter/3
-Download and install Java from here: http://java.com/en/
+Download and install Java here: http://java.com/en/
 
 == License
 
