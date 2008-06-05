@@ -1,7 +1,7 @@
 require 'rake'
 
 Gem::Specification.new do |s|
-  s.version            = '0.11'
+  s.version            = '0.12'
   s.date               = Time.now
   
   s.name               = 'blender'
@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.homepage           = 'http://github.com/front-end/front-end-blender/tree/master'
   s.rubyforge_project  = 'frontendblender'
   
-  s.files              = FileList[ 'README', 'MIT-LICENSE', 'bin/*', 'lib/**/*' ].to_a
+  s.files              = FileList[ 'README.rdoc', 'MIT-LICENSE', 'bin/*', 'lib/**/*' ].to_a
   s.autorequire        = 'front_end_architect/blend'
   s.executables        << 'blend'
   s.default_executable = 'blend'

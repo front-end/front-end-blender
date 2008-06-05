@@ -17,7 +17,7 @@ require 'zlib'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.11'
+    VERSION      = '0.12'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im

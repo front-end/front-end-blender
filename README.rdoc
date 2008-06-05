@@ -43,8 +43,8 @@ source files are the hash values as an array. Here is a sample Blendfile:
     -c, --cache-buster [BUSTER]      Append cache busters to URLs in CSS, defaults to timestamps
         --force                      Force blending when source files aren't newer than output files
         --yui=YUIOPTS                Pass arguments to YUI Compressor
-    -d, --data                       Convert url(file.ext) to url(data:) in CSS files EXPERIMENTAL
-    -z, --gzip                       Also create gzip output files EXPERIMENTAL
+    -d, --data                       EXPERIMENTAL Convert url(file.ext) to url(data:) in CSS files
+    -z, --gzip                       EXPERIMENTAL Also create gzip output files
 
 == Examples
 
