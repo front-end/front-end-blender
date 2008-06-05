@@ -21,7 +21,6 @@ source files are the hash values as an array. Here is a sample Blendfile:
       - _global.js
       - _analytics.js
       - ../vendor/google-analytics/ga.js
-  
   _style:
     _global:
       min.css:
@@ -74,7 +73,7 @@ Download and install Java here: http://java.com/en/
 == License
 
 Copyright (c) 2008 Chris Griego
-          (c) 2008 Blake Elshire
+Copyright (c) 2008 Blake Elshire
 
 Blender is freely distributable under the terms of an MIT-style license.
 For details, see http://www.opensource.org/licenses/mit-license.php
