@@ -21,7 +21,6 @@ source files are the hash values as an array. Here is a sample Blendfile:
       - _global.js
       - _analytics.js
       - ../vendor/google-analytics/ga.js
-  
   _style:
     _global:
       min.css:
@@ -44,8 +43,8 @@ source files are the hash values as an array. Here is a sample Blendfile:
     -c, --cache-buster [BUSTER]      Append cache busters to URLs in CSS, defaults to timestamps
         --force                      Force blending when source files aren't newer than output files
         --yui=YUIOPTS                Pass arguments to YUI Compressor
-    -d, --data                       Convert url(file.ext) to url(data:) in CSS files EXPERIMENTAL
-    -z, --gzip                       Also create gzip output files EXPERIMENTAL
+    -d, --data                       EXPERIMENTAL Convert url(file.ext) to url(data:) in CSS files
+    -z, --gzip                       EXPERIMENTAL Also create gzip output files
 
 == Examples
 
@@ -53,26 +52,28 @@ In your site directory run 'blend' to minify CSS and JavaScript.
   blend
 
 Other examples:
-  blend -f public/Blendfile.yaml
+  blend --generate
+  blend --yui='--preserve-semi'
   blend -t css
   blend -t css -d
-  blend --yui='--preserve-semi'
+  blend -f public/Blendfile.yaml
 
 == Installation
 
 To install the rubygem, run the following at the command line:
-  sudo gem install blender
+  sudo gem install mime-types
+  sudo gem install front-end-blender --source=http://gems.github.com
 
 Java, v1.4 or greater is required
 
 Ruby installation instructions for your platform can be found here: http://www.ruby-lang.org/en/downloads/
 Instructions for downloading & installing rubygems can be found here: http://rubygems.org/read/chapter/3
-Download and install Java from here: http://java.com/en/
+Download and install Java here: http://java.com/en/
 
 == License
 
-Copyright (c) 2008 Chris Griego
-          (c) 2008 Blake Elshire
+  Copyright (c) 2008 Chris Griego
+            (c) 2008 Blake Elshire
 
 Blender is freely distributable under the terms of an MIT-style license.
 For details, see http://www.opensource.org/licenses/mit-license.php

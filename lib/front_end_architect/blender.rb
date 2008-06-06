@@ -17,7 +17,7 @@ require 'zlib'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.11'
+    VERSION      = '0.12'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
@@ -155,11 +155,12 @@ module FrontEndArchitect
       File.open(output_name, 'w') do |output_file|
         # Determine full path of the output file
         output_path = Pathname.new(File.expand_path(File.dirname(output_name)))
-        imports = ''
+        imports     = ''
         
         sources.each do |i|
           if File.extname(i) == '.css'
             processed_output, processed_imports = process_css(i, output_path)
+            
             output  << processed_output
             imports << processed_imports
           else
@@ -230,8 +231,9 @@ module FrontEndArchitect
           uri = $2
           unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
             full_path = File.expand_path($2, File.dirname(input_file))
-            buster = make_cache_buster(full_path, $3)
-            new_path = uri.to_s + buster
+            buster    = make_cache_buster(full_path, $3)
+            new_path  = uri.to_s + buster
+            
             %Q!filter='#{new_path}'!
           else
             %Q!filter='#{$2}#{$3}'!
@@ -241,11 +243,13 @@ module FrontEndArchitect
       
       # Handle @import statements URL rewrite and adding cache busters
       input = input.gsub(IMPORT_REGEX) do |import|
-        uri = $2
+        uri        = $2
         asset_path = Pathname.new(File.expand_path(uri, input_path))
+        
         unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
           if (output_path != input_path && !uri.match(/^(\/[^\/]+.+)$/))
             new_path = asset_path.relative_path_from(output_path)
+            
             if @options[:cache_buster]
               buster = make_cache_buster(asset_path, $3)
               import.gsub!(uri, new_path.to_s+buster)
@@ -259,7 +263,9 @@ module FrontEndArchitect
             end
           end
         end
+        
         found_imports << import
+        
         %Q!!
       end
       
@@ -268,6 +274,7 @@ module FrontEndArchitect
           input = input.gsub(URL_REGEX) do |uri|
             unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
               new_path = File.expand_path($2, File.dirname(input_file))
+              
               %Q!url(#{new_path}#{$3})!
             else
               %Q!url(#{$2}#{$3})!
@@ -277,10 +284,12 @@ module FrontEndArchitect
           input = input.gsub(URL_REGEX) do
             unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
               uri = $2
+              
               if @options[:cache_buster]
-                buster = make_cache_buster(uri, $3)
+                buster   = make_cache_buster(uri, $3)
                 new_path = uri.to_s+buster
               end
+              
               %Q!url(#{new_path})!
             else
               %Q!url(#{$2}#{$3})!
@@ -293,20 +302,23 @@ module FrontEndArchitect
         # Find all url(.ext) in file and rewrite relative url from output directory.
         input = input.gsub(URL_REGEX) do
           uri = $2
+          
           unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
             if @options[:data]
               # if doing data conversion rewrite url as an absolute path.
               new_path = File.expand_path(uri, File.dirname(input_file))
             else
               asset_path = Pathname.new(File.expand_path(uri, File.dirname(input_file)))
-              new_path = asset_path.relative_path_from(output_path)
+              new_path   = asset_path.relative_path_from(output_path)
+              
               if @options[:cache_buster]
-                buster = make_cache_buster(asset_path, $3)
+                buster   = make_cache_buster(asset_path, $3)
                 new_path = new_path.to_s+buster
               else
                 new_path = new_path.to_s+$3 unless $3.nil?
               end
             end
+            
             %Q!url(#{new_path})!
           else
             %Q!url(#{$2}#{$3})!
