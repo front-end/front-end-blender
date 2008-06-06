@@ -244,7 +244,7 @@ module FrontEndArchitect
         uri = $2
         asset_path = Pathname.new(File.expand_path(uri, input_path))
         unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
-          if (output_path != input_path)
+          if (output_path != input_path && !uri.match(/^(\/[^\/]+.+)$/))
             new_path = asset_path.relative_path_from(output_path)
             if @options[:cache_buster]
               buster = make_cache_buster(asset_path, $3)
@@ -273,7 +273,7 @@ module FrontEndArchitect
               %Q!url(#{$2}#{$3})!
             end
           end
-        elsif @options[:cache_buster]
+        if @options[:cache_buster]
           input = input.gsub(URL_REGEX) do
             unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
               uri = $2
