@@ -280,7 +280,7 @@ module FrontEndArchitect
               %Q!url(#{$2}#{$3})!
             end
           end
-        if @options[:cache_buster]
+        elsif @options[:cache_buster]
           input = input.gsub(URL_REGEX) do
             unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
               uri = $2
