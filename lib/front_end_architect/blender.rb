@@ -17,7 +17,7 @@ require 'zlib'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.12'
+    VERSION      = '0.13'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
@@ -27,6 +27,7 @@ module FrontEndArchitect
       :blendfile => 'Blendfile.yaml',
       :data      => false,
       :force     => false,
+      :root      => File.dirname(:blendfile.to_s),
     }
     
     def initialize(opts)
@@ -187,7 +188,7 @@ module FrontEndArchitect
             
             if @options[:data]
               output = output.gsub(URL_REGEX) do
-                if (!$2.include?('.css'))
+                unless $2.include?('.css')
                   mime_type    = MIME::Types.type_for($2)
                   url_contents = make_data_uri(IO.read($2), mime_type[0])
                 else
@@ -219,6 +220,7 @@ module FrontEndArchitect
       end
     end
     
+    # TODO Move this to a seperate class and clean it up A LOT. For 1.1
     def process_css(input_file, output_path)
       # Determine full path of input file
       input_path    = Pathname.new(File.dirname(input_file))
@@ -245,9 +247,14 @@ module FrontEndArchitect
       input = input.gsub(IMPORT_REGEX) do |import|
         uri        = $2
         asset_path = Pathname.new(File.expand_path(uri, input_path))
+
+        if uri.match(/^(\/[^\/]+.+)$/)
+          asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+        end
         
         unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
-          if (output_path != input_path && !uri.match(/^(\/[^\/]+.+)$/))
+          if (output_path != input_path)
+            
             new_path = asset_path.relative_path_from(output_path)
             
             if @options[:cache_buster]
@@ -271,11 +278,15 @@ module FrontEndArchitect
       
       if output_path == input_path
         if @options[:data]
-          input = input.gsub(URL_REGEX) do |uri|
+          input = input.gsub(URL_REGEX) do
+            uri = $2
+            
             unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
               new_path = File.expand_path($2, File.dirname(input_file))
-              
-              %Q!url(#{new_path}#{$3})!
+              if uri.match(/^(\/[^\/]+.+)$/)
+                new_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+              end
+              %Q!url(#{new_path})!
             else
               %Q!url(#{$2}#{$3})!
             end
@@ -284,6 +295,10 @@ module FrontEndArchitect
           input = input.gsub(URL_REGEX) do
             unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
               uri = $2
+              
+              if uri.match(/^(\/[^\/]+.+)$/)
+                uri = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+              end
               
               if @options[:cache_buster]
                 buster   = make_cache_buster(uri, $3)
@@ -307,8 +322,14 @@ module FrontEndArchitect
             if @options[:data]
               # if doing data conversion rewrite url as an absolute path.
               new_path = File.expand_path(uri, File.dirname(input_file))
+              if uri.match(/^(\/[^\/]+.+)$/)
+                new_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+              end
             else
               asset_path = Pathname.new(File.expand_path(uri, File.dirname(input_file)))
+              if uri.match(/^(\/[^\/]+.+)$/)
+                asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+              end
               new_path   = asset_path.relative_path_from(output_path)
               
               if @options[:cache_buster]
