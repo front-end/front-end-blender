@@ -247,7 +247,7 @@ module FrontEndArchitect
       input = input.gsub(IMPORT_REGEX) do |import|
         uri        = $2
         asset_path = Pathname.new(File.expand_path(uri, input_path))
-
+        
         if uri.match(/^(\/[^\/]+.+)$/)
           asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
         end
@@ -286,6 +286,7 @@ module FrontEndArchitect
               if uri.match(/^(\/[^\/]+.+)$/)
                 new_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
               end
+              
               %Q!url(#{new_path})!
             else
               %Q!url(#{$2}#{$3})!
@@ -322,14 +323,17 @@ module FrontEndArchitect
             if @options[:data]
               # if doing data conversion rewrite url as an absolute path.
               new_path = File.expand_path(uri, File.dirname(input_file))
+              
               if uri.match(/^(\/[^\/]+.+)$/)
                 new_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
               end
             else
               asset_path = Pathname.new(File.expand_path(uri, File.dirname(input_file)))
+              
               if uri.match(/^(\/[^\/]+.+)$/)
                 asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
               end
+              
               new_path   = asset_path.relative_path_from(output_path)
               
               if @options[:cache_buster]

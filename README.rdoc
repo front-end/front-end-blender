@@ -39,9 +39,9 @@ source files are the hash values as an array. Here is a sample Blendfile:
     -V, --version                    Prints Blender's version number
     -g, --generate                   Generate a stub Blendfile
     -f, --file FILE                  Use given Blendfile
+    -r, --root ROOT                  Specify the path to the web root directory
     -t, --type TYPE                  Select file type to blend (css, js)
     -c, --cache-buster [BUSTER]      Append cache busters to URLs in CSS, defaults to timestamps
-    -r, --root ROOT                  Specify the path to the web root directory
         --force                      Force blending when source files aren't newer than output files
         --yui=YUIOPTS                Pass arguments to YUI Compressor
     -d, --data                       EXPERIMENTAL Convert url(file.ext) to url(data:) in CSS files
