@@ -6,6 +6,8 @@
 
 # TODO Nearly all file name comparisons should be case-insensitive
 
+$:.unshift File.join(File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__), *%w[..])
+
 require 'rubygems'
 require 'yaml'
 require 'base64'
@@ -14,10 +16,11 @@ require 'mime/types'
 require 'find'
 require 'pathname'
 require 'zlib'
+require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.13'
+    VERSION      = '0.14'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
@@ -104,24 +107,22 @@ module FrontEndArchitect
           # TODO Check file contents instead of name for minification (port YSlow's isMinified)
           f.gsub!(Dir.getwd.to_s + '/', '')
           
-          if File.extname(f) == '.css'
-            min_file = f.sub(/\.css$/, '-min.css')
+          if File.extname(f) == '.css' || File.extname(f) == '.js'
+            min_file  = basename.sub(/\.(css|js)$/, '-min.\1')
+            path      = File.dirname(f).split('/') # File#dirname depends on /
             
-            blend_files[min_file] = [f]
-          elsif File.extname(f) == '.js'
-            min_file = f.sub(/\.js$/, '-min.js')
+            path.push min_file
+            path.push [basename]
             
-            blend_files[min_file] = [f]
+            h = path.reverse.inject { |m,v| { v => m } }
+            
+            blend_files.deep_merge!(h).inspect
           end
         end
       end
       
-      blend_files = blend_files.sort
-      
       File.open(@options[:blendfile], 'w') do |blendfile|
-        blend_files.each do |block|
-          blendfile << "#{block[0]}:\r\n  - #{block[1]}\r\n"
-        end
+        blendfile << blend_files.to_yaml
       end
     end
     
