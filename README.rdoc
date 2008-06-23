@@ -61,14 +61,15 @@ Other examples:
 
 == Installation
 
-To install the rubygem, run the following at the command line:
-  sudo gem install mime-types
-  sudo gem install front-end-blender --source=http://gems.github.com
+To install the RubyGem, run the following at the command line:
+  sudo gem sources --add http://gems.github.com
+  sudo gem install front-end-blender
 
-Java, v1.4 or greater is required
+* Java, v1.4 or greater is required
+* RubyGems, v1.2 or greater is recommended
 
 Ruby installation instructions for your platform can be found here: http://www.ruby-lang.org/en/downloads/
-Instructions for downloading & installing rubygems can be found here: http://rubygems.org/read/chapter/3
+Instructions for downloading & installing RubyGems can be found here: http://rubygems.org/read/chapter/3
 Download and install Java here: http://java.com/en/
 
 == License
