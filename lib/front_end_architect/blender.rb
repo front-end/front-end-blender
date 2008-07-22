@@ -232,6 +232,7 @@ module FrontEndArchitect
       if @options[:cache_buster]
         input = input.gsub(FILTER_REGEX) do |filter|
           uri = $2
+          cbuster = $3
           unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
             full_path = File.expand_path($2, File.dirname(input_file))
             buster    = make_cache_buster(full_path, $3)
@@ -239,7 +240,7 @@ module FrontEndArchitect
             
             %Q!filter='#{new_path}'!
           else
-            %Q!filter='#{$2}#{$3}'!
+            %Q!filter='#{uri}#{cbuster}'!
           end
         end
       end
@@ -281,6 +282,7 @@ module FrontEndArchitect
         if @options[:data]
           input = input.gsub(URL_REGEX) do
             uri = $2
+            cbuster = $3
             
             unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
               new_path = File.expand_path($2, File.dirname(input_file))
@@ -290,13 +292,14 @@ module FrontEndArchitect
               
               %Q!url(#{new_path})!
             else
-              %Q!url(#{$2}#{$3})!
+              %Q!url(#{uri}#{cbuster})!
             end
           end
         elsif @options[:cache_buster]
           input = input.gsub(URL_REGEX) do
             unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
               uri = $2
+              cbuster = $3
               
               if uri.match(/^(\/[^\/]+.+)$/)
                 uri = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
@@ -309,7 +312,7 @@ module FrontEndArchitect
               
               %Q!url(#{new_path})!
             else
-              %Q!url(#{$2}#{$3})!
+              %Q!url(#{uri}#{cbuster})!
             end
           end
         end
@@ -319,7 +322,7 @@ module FrontEndArchitect
         # Find all url(.ext) in file and rewrite relative url from output directory.
         input = input.gsub(URL_REGEX) do
           uri = $2
-          
+          cbuster = $3
           unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
             if @options[:data]
               # if doing data conversion rewrite url as an absolute path.
@@ -347,7 +350,7 @@ module FrontEndArchitect
             
             %Q!url(#{new_path})!
           else
-            %Q!url(#{$2}#{$3})!
+            %Q!url(#{uri}#{cbuster})!
           end
         end
         
