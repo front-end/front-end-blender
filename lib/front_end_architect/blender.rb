@@ -144,7 +144,11 @@ module FrontEndArchitect
         prefix += File::SEPARATOR unless context.empty?
         
         value.each_index do |i|
-          value[i] = prefix + value[i]
+          unless value[i].match(/^(\/[^\/]+.+)$/)
+            value[i] = prefix + value[i]
+          else
+            value[i] = @options[:root] + value[i]
+          end
         end
         
         return { (prefix + key) => value }
