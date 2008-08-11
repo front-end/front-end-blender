@@ -20,7 +20,7 @@ require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.14'
+    VERSION      = '0.15'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
@@ -31,6 +31,7 @@ module FrontEndArchitect
       :data      => false,
       :force     => false,
       :root      => File.dirname(:blendfile.to_s),
+      :min       => :yui,
     }
     
     def initialize(opts)
@@ -179,37 +180,42 @@ module FrontEndArchitect
         end
         
         # Compress
-        libdir = File.join(File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__), *%w[.. .. lib])
-        
-        IO.popen("java -jar #{libdir}/yui/yuicompressor.jar #{@options[:yuiopts]} --type #{type}", 'r+') do |io|
-          io.write output
-          io.close_write
+        if @options[:min] == :yui
+          libdir = File.join(File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__), *%w[.. .. lib])
           
-          output = io.read
-          
-          if File.extname(output_name) == '.css'
-            output.gsub! ' and(', ' and (' # Workaround for YUI Compressor Bug #1938329
-            output.gsub! '*/;}',  '*/}'    # Workaround for YUI Compressor Bug #1961175
+          IO.popen("java -jar #{libdir}/yui/yuicompressor.jar #{@options[:yuiopts]} --type #{type}", 'r+') do |io|
+            io.write output
+            io.close_write
             
-            if @options[:data]
-              output = output.gsub(URL_REGEX) do
-                unless $2.include?('.css')
-                  mime_type    = MIME::Types.type_for($2)
-                  url_contents = make_data_uri(IO.read($2), mime_type[0])
-                else
-                  url_contents = $2
-                end
-                  %Q!url(#{url_contents})!
-              end
+            output = io.read
+            
+            if File.extname(output_name) == '.css'
+              output.gsub! ' and(', ' and (' # Workaround for YUI Compressor Bug #1938329
+              output.gsub! '*/;}',  '*/}'    # Workaround for YUI Compressor Bug #1961175
             end
           end
           
-          output_file << output
+          if $? == 32512 # command not found
+            raise "\nBlender requires Java, v1.4 or greater, to be installed for YUI Compressor"
+          end
         end
         
-        if $? == 32512 # command not found
-          raise "\nBlender requires Java, v1.4 or greater, to be installed for YUI Compressor"
+        # Data
+        if @options[:data]
+          if File.extname(output_name) == '.css'
+            output = output.gsub(URL_REGEX) do
+              unless $2.include?('.css')
+                mime_type    = MIME::Types.type_for($2)
+                url_contents = make_data_uri(IO.read($2), mime_type[0])
+              else
+                url_contents = $2
+              end
+                %Q!url(#{url_contents})!
+            end
+          end
         end
+        
+        output_file << output
       end
       
       puts output_name
