@@ -20,7 +20,7 @@ require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.15'
+    VERSION      = '0.16'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im

@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.version            = '0.15'
+  s.version            = '0.16'
   s.date               = Time.now
   
   s.name               = 'blender'

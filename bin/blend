@@ -19,7 +19,7 @@ opts = OptionParser.new do |opts|
   opts.on('-f FILE',         '--file FILE',             String,        "Use given Blendfile")                                             {|f| options[:blendfile]    = f                            }
   opts.on('-r ROOT',         '--root ROOT',             String,        "Set the path to the web root directory")                          {|r| options[:root]         = r                            }
   opts.on('-t TYPE',         '--type TYPE',             [:css, :js],   "Select file type to blend (css, js)")                             {|t| options[:file_type]    = t                            }
-  opts.on('-m MINIFIER',     '--min MINIFIER',          [:yui, :none], "Select minifier to use (yui, none), default is YUI")              {|m| options[:min]          = m.to_sym                     }
+  opts.on('-m [MINIFIER]',   '--min [MINIFIER]',        [:yui, :none], "Select minifier to use (yui, none)")                              {|m| options[:min]          = m.nil? ? :none : m.to_sym    }
   opts.on('-c [BUSTER]',     '--cache-buster [BUSTER]', String,        "Append cache busters to URLs in CSS, defaults to timestamps")     {|b| options[:cache_buster] = b.nil? ? :mtime : b          }
   opts.on(                   '--force',                 String,        "Force blending when source files aren't newer than output files") {    options[:force]        = true                         }
   opts.on(                   '--yui=YUIOPTS',           String,        "Pass arguments to YUI Compressor")                                {|o| options[:yuiopts]      = o                            }
