@@ -41,6 +41,7 @@ source files are the hash values as an array. Here is a sample Blendfile:
     -f, --file FILE                  Use given Blendfile
     -r, --root ROOT                  Specify the path to the web root directory
     -t, --type TYPE                  Select file type to blend (css, js)
+    -m, --min MINIFIER               Select minifier to use (yui, none), default is YUI
     -c, --cache-buster [BUSTER]      Append cache busters to URLs in CSS, defaults to timestamps
         --force                      Force blending when source files aren't newer than output files
         --yui=YUIOPTS                Pass arguments to YUI Compressor
