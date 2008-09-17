@@ -17,5 +17,6 @@ Gem::Specification.new do |s|
   s.default_executable = 'blend'
   
   s.add_dependency 'mime-types', '>= 1.15'
+  s.add_dependency 'colored',    '>= 1.1'
   s.requirements << 'Java, v1.4 or greater'
 end

@@ -12,6 +12,7 @@ require 'rubygems'
 require 'yaml'
 require 'base64'
 require 'benchmark'
+require 'colored'
 require 'mime/types'
 require 'find'
 require 'pathname'
@@ -76,10 +77,15 @@ module FrontEndArchitect
               end
               
               if output_new || @options[:force]
-                create_output(output_name, sources, file_type)
+                if File.writable?(output_name) && !(@options[:gzip] && !File.writable?(gzip_output_name))
+                  create_output(output_name, sources, file_type)
+                else
+                  puts "Permission Denied:".white_on_red + " " + output_name.red
+                  puts "Permission Denied:".white_on_red + " " + gzip_output_name.red if @options[:gzip]
+                end
               else
-                puts "Skipping: #{output_name}"
-                puts "Skipping: #{gzip_output_name}" if @options[:gzip]
+                puts "Skipping: ".yellow + output_name.yellow
+                puts "Skipping: ".yellow + gzip_output_name.yellow if @options[:gzip]
               end
             else
               create_output(output_name, sources, file_type)
@@ -218,7 +224,7 @@ module FrontEndArchitect
         output_file << output
       end
       
-      puts output_name
+      puts output_name.green
       
       if @options[:gzip]
         output_gzip = output_name + '.gz'
@@ -227,7 +233,7 @@ module FrontEndArchitect
           gz.write(output)
         end
         
-        puts output_gzip
+        puts output_gzip.green
       end
     end
     
