@@ -4,8 +4,6 @@
 # Blender is freely distributable under the terms of an MIT-style license.
 # For details, see http://www.opensource.org/licenses/mit-license.php
 
-# TODO Nearly all file name comparisons should be case-insensitive
-
 $:.unshift File.join(File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__), *%w[..])
 
 require 'rubygems'
@@ -21,7 +19,7 @@ require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.16'
+    VERSION      = '0.17'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
@@ -80,12 +78,12 @@ module FrontEndArchitect
                 if File.writable?(output_name) && !(@options[:gzip] && !File.writable?(gzip_output_name))
                   create_output(output_name, sources, file_type)
                 else
-                  puts "Permission Denied:".white_on_red + " " + output_name.red
-                  puts "Permission Denied:".white_on_red + " " + gzip_output_name.red if @options[:gzip]
+                  puts 'Permission Denied:'.white_on_red + ' ' + output_name.red
+                  puts 'Permission Denied:'.white_on_red + ' ' + gzip_output_name.red if @options[:gzip]
                 end
               else
-                puts "Skipping: ".yellow + output_name.yellow
-                puts "Skipping: ".yellow + gzip_output_name.yellow if @options[:gzip]
+                puts 'Skipping: '.yellow + output_name.yellow
+                puts 'Skipping: '.yellow + gzip_output_name.yellow if @options[:gzip]
               end
             else
               create_output(output_name, sources, file_type)
@@ -107,16 +105,15 @@ module FrontEndArchitect
       Find.find(Dir.getwd) do |f|
         basename = File.basename(f)
         
-        if FileTest.directory?(f) && (basename[0] == ?. || basename.match(/^(yui|tinymce|dojo|wp-includes|wp-admin|mint)$/) || (File.basename(f) == 'rails' && File.basename(File.dirname(f)) == 'vendor'))
+        if FileTest.directory?(f) && (basename[0] == ?. || basename.match(/^(yui|tinymce|dojo|wp-includes|wp-admin|mint)$/i) || (File.basename(f).downcase == 'rails' && File.basename(File.dirname(f)).downcase == 'vendor'))
           Find.prune
-        elsif !(basename.match(/[-.](pack|min)\.(css|js)$/) || basename.match(/^(sifr\.js|ext\.js|mootools.*\.js)$/))
-          # TODO Test for 'pack.js' and 'min.css' where the folder name serves as the identifier
+        elsif !(basename.match(/(^|[-.])(pack|min)\.(css|js)$/i) || basename.match(/^(sifr\.js|ext\.js|mootools.*\.js)$/i))
           # TODO Check file contents instead of name for minification (port YSlow's isMinified)
           f.gsub!(Dir.getwd.to_s + '/', '')
           
-          if File.extname(f) == '.css' || File.extname(f) == '.js'
-            min_file  = basename.sub(/\.(css|js)$/, '-min.\1')
-            path      = File.dirname(f).split('/') # File#dirname depends on /
+          if File.extname(f).downcase == '.css' || File.extname(f).downcase == '.js'
+            min_file  = basename.sub(/\.(css|js)$/i, '-min.\1')
+            path      = File.dirname(f).split('/') # File::dirname depends on /
             
             path.push min_file
             path.push [basename]
@@ -171,7 +168,7 @@ module FrontEndArchitect
         imports     = ''
         
         sources.each do |i|
-          if File.extname(i) == '.css'
+          if File.extname(i).downcase == '.css'
             processed_output, processed_imports = process_css(i, output_path)
             
             output  << processed_output
@@ -181,7 +178,7 @@ module FrontEndArchitect
           end
         end
         
-        if File.extname(output_name) == '.css' && !imports.empty?
+        if File.extname(output_name).downcase == '.css' && !imports.empty?
           output.insert(0, imports)
         end
         
@@ -208,9 +205,9 @@ module FrontEndArchitect
         
         # Data
         if @options[:data]
-          if File.extname(output_name) == '.css'
+          if File.extname(output_name).downcase == '.css'
             output = output.gsub(URL_REGEX) do
-              unless $2.include?('.css')
+              unless $2.downcase.include?('.css')
                 mime_type    = MIME::Types.type_for($2)
                 url_contents = make_data_uri(IO.read($2), mime_type[0])
               else
@@ -249,7 +246,7 @@ module FrontEndArchitect
         input = input.gsub(FILTER_REGEX) do |filter|
           uri = $2
           cbuster = $3
-          unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+          unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
             full_path = File.expand_path($2, File.dirname(input_file))
             buster    = make_cache_buster(full_path, $3)
             new_path  = uri.to_s + buster
@@ -270,7 +267,7 @@ module FrontEndArchitect
           asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
         end
         
-        unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+        unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
           if (output_path != input_path)
             
             new_path = asset_path.relative_path_from(output_path)
@@ -297,11 +294,12 @@ module FrontEndArchitect
       if output_path == input_path
         if @options[:data]
           input = input.gsub(URL_REGEX) do
-            uri = $2
+            uri     = $2
             cbuster = $3
             
-            unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+            unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
               new_path = File.expand_path($2, File.dirname(input_file))
+              
               if uri.match(/^(\/[^\/]+.+)$/)
                 new_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
               end
@@ -313,8 +311,8 @@ module FrontEndArchitect
           end
         elsif @options[:cache_buster]
           input = input.gsub(URL_REGEX) do
-            unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
-              uri = $2
+            unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
+              uri     = $2
               cbuster = $3
               
               if uri.match(/^(\/[^\/]+.+)$/)
@@ -337,11 +335,12 @@ module FrontEndArchitect
       else
         # Find all url(.ext) in file and rewrite relative url from output directory.
         input = input.gsub(URL_REGEX) do
-          uri = $2
+          uri     = $2
           cbuster = $3
-          unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/)
+          
+          unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
             if @options[:data]
-              # if doing data conversion rewrite url as an absolute path.
+              # if doing data conversion rewrite url as an absolute path
               new_path = File.expand_path(uri, File.dirname(input_file))
               
               if uri.match(/^(\/[^\/]+.+)$/)
@@ -354,7 +353,7 @@ module FrontEndArchitect
                 asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
               end
               
-              new_path   = asset_path.relative_path_from(output_path)
+              new_path = asset_path.relative_path_from(output_path)
               
               if @options[:cache_buster]
                 buster   = make_cache_buster(asset_path, $3)
@@ -383,7 +382,7 @@ module FrontEndArchitect
       
       if @options[:cache_buster] == :mtime
         file_mtime = File.mtime(asset_path).to_i
-        buster = query_string + file_mtime.to_s
+        buster     = query_string + file_mtime.to_s
       else
         buster = query_string + @options[:cache_buster]
       end
