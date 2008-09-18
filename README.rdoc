@@ -67,9 +67,9 @@ To install the RubyGem, run the following at the command line (you may need to u
   gem sources --add http://gems.github.com
   gem install front-end-blender
 
-* Java[http://java.com/en/] v1.4 or greater is required
-* Ruby[http://www.ruby-lang.org/en/downloads/] v1.8.6 or greater is required
-* RubyGems[http://rubygems.org/read/chapter/3] v1.2 or greater is recommended
+* Java v1.4 or greater is required, http://java.com/en/
+* Ruby v1.8.6 or greater is required, http://www.ruby-lang.org/en/downloads/
+* RubyGems v1.2 or greater is recommended, http://rubygems.org/read/chapter/3
 
 == License
 
