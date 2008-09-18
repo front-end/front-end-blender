@@ -62,16 +62,14 @@ Other examples:
 
 == Installation
 
-To install the RubyGem, run the following at the command line:
-  sudo gem sources --add http://gems.github.com
-  sudo gem install front-end-blender
+To install the RubyGem, run the following at the command line (you may need to use a command such as su or sudo):
+  gem update --system
+  gem sources --add http://gems.github.com
+  gem install front-end-blender
 
-* Java, v1.4 or greater is required
-* RubyGems, v1.2 or greater is recommended
-
-Ruby installation instructions for your platform can be found here: http://www.ruby-lang.org/en/downloads/
-Instructions for downloading & installing RubyGems can be found here: http://rubygems.org/read/chapter/3
-Download and install Java here: http://java.com/en/
+* Java[http://java.com/en/], v1.4 or greater is required
+* Ruby[http://www.ruby-lang.org/en/downloads/], v1.8.6 or greater is required
+* RubyGems[http://rubygems.org/read/chapter/3], v1.2 or greater is recommended
 
 == License
 
