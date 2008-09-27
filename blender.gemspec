@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
-  s.version            = '0.17'
+  s.version            = '0.18'
   s.date               = Time.now
   
   s.name               = 'blender'
-  s.summary            = 'Blender gives you efficient, production-ready CSS and/or JavaScript assets.'
+  s.summary            = 'Blender outputs efficient, production-ready CSS and/or JavaScript assets.'
   s.description        = 'Blender is like ant or make for the front-end. It aggregates and compresses CSS and/or JavaScript assets for a site into efficient, production-ready files.'
   
   s.authors            = 'Blake Elshire & Chris Griego'

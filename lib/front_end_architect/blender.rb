@@ -19,7 +19,7 @@ require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION      = '0.17'
+    VERSION = '0.18'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
@@ -43,7 +43,8 @@ module FrontEndArchitect
           raise "Couldn't find '#{@options[:blendfile]}'"
         end
         
-        blender = YAML::load_file @options[:blendfile]
+        blendfile_mtime = File.mtime(@options[:blendfile])
+        blender         = YAML::load_file @options[:blendfile]
         
         Dir.chdir(File.dirname(@options[:blendfile]))
         
@@ -67,10 +68,14 @@ module FrontEndArchitect
               
               oldest_output = output_files.sort.first
               
-              sources.each do |i|
-                if File.mtime(i) > oldest_output
-                  output_new = true
-                  break
+              if blendfile_mtime > oldest_output
+                output_new = true
+              else
+                sources.each do |i|
+                  if File.mtime(i) > oldest_output
+                    output_new = true
+                    break
+                  end
                 end
               end
               
