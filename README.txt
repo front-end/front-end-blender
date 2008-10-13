@@ -63,21 +63,18 @@ Other examples:
 == Installation
 
 To install the RubyGem, run the following at the command line (you may need to use a command such as su or sudo):
-  gem install mime-types
-  gem install colored
-  gem install front-end-blender --source http://gems.github.com
+  gem install blender
 
 If you're using Windows, you'll also need to run the following:
   gem install win32console
 
-* Java v1.4 or greater is required, http://java.com/en/
-* Ruby v1.8.6 or greater is required, http://www.ruby-lang.org/en/downloads/
-* RubyGems v1.2 or greater is recommended, http://rubygems.org/read/chapter/3
+* Java[http://java.com/en/] v1.4 or greater is required
+* Ruby[http://www.ruby-lang.org/en/downloads/] v1.8.6 or greater is required
+* RubyGems[http://rubygems.org/read/chapter/3] v1.2 or greater is recommended
 
 == License
 
-  Copyright (c) 2008 Chris Griego
-            (c) 2008 Blake Elshire
+Copyright (c) 2008 Blake Elshire, Chris Griego
 
 Blender is freely distributable under the terms of an MIT-style license.
 For details, see http://www.opensource.org/licenses/mit-license.php

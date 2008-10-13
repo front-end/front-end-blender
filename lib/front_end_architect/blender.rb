@@ -1,5 +1,4 @@
-# Copyright (c) 2008 Chris Griego
-#           (c) 2008 Blake Elshire
+# Copyright (c) 2008 Blake Elshire, Chris Griego
 # 
 # Blender is freely distributable under the terms of an MIT-style license.
 # For details, see http://www.opensource.org/licenses/mit-license.php
@@ -19,7 +18,7 @@ require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION = '0.18'
+    VERSION = '0.20'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im

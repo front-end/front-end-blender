@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright (c) 2008 Chris Griego
-#           (c) 2008 Blake Elshire
+# Copyright (c) 2008 Blake Elshire, Chris Griego
 # 
 # Blender is freely distributable under the terms of an MIT-style license.
 # For details, see http://www.opensource.org/licenses/mit-license.php
