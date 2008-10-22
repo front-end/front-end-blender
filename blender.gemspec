@@ -1,10 +1,10 @@
 Gem::Specification.new do |s|
   s.name = %q{blender}
-  s.version = "0.20"
+  s.version = "0.21"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Blake Elshire", "Chris Griego"]
-  s.date = %q{2008-10-13}
+  s.date = %q{2008-10-21}
   s.default_executable = %q{blend}
   s.description = %q{Blender is like ant or make for the front-end. It aggregates and compresses CSS and/or JavaScript assets for a site into efficient, production-ready files.}
   s.email = %q{blender@front-end-architect.com}
@@ -27,15 +27,15 @@ Gem::Specification.new do |s|
     if current_version >= 3 then
       s.add_runtime_dependency(%q<mime-types>, [">= 1.15"])
       s.add_runtime_dependency(%q<colored>, [">= 1.1"])
-      s.add_development_dependency(%q<hoe>, [">= 1.7.0"])
+      s.add_development_dependency(%q<hoe>, [">= 1.8.0"])
     else
       s.add_dependency(%q<mime-types>, [">= 1.15"])
       s.add_dependency(%q<colored>, [">= 1.1"])
-      s.add_dependency(%q<hoe>, [">= 1.7.0"])
+      s.add_dependency(%q<hoe>, [">= 1.8.0"])
     end
   else
     s.add_dependency(%q<mime-types>, [">= 1.15"])
     s.add_dependency(%q<colored>, [">= 1.1"])
-    s.add_dependency(%q<hoe>, [">= 1.7.0"])
+    s.add_dependency(%q<hoe>, [">= 1.8.0"])
   end
 end

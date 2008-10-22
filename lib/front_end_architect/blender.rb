@@ -18,7 +18,7 @@ require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION = '0.20'
+    VERSION = '0.21'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
@@ -238,8 +238,9 @@ module FrontEndArchitect
       end
     end
     
-    # TODO Move this to a seperate class and clean it up A LOT. For 1.1
     def process_css(input_file, output_path)
+      # TODO Move this to a seperate class and clean it up A LOT. For 1.1
+      
       # Determine full path of input file
       input_path    = Pathname.new(File.dirname(input_file))
       input         = IO.read(input_file)
