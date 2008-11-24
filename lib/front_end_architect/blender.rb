@@ -9,7 +9,7 @@ require 'rubygems'
 require 'yaml'
 require 'base64'
 require 'benchmark'
-require 'colored'
+require 'colored' unless PLATFORM =~ /win32/ && !Gem.available?('win32console')
 require 'mime/types'
 require 'find'
 require 'pathname'
@@ -18,7 +18,7 @@ require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION = '0.22'
+    VERSION = '0.23'
     
     FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
     IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
@@ -30,6 +30,7 @@ module FrontEndArchitect
       :force     => false,
       :root      => File.dirname(:blendfile.to_s),
       :min       => :yui,
+      :colored   => (Object.const_defined? :Colored),
     }
     
     def initialize(opts)
@@ -82,12 +83,12 @@ module FrontEndArchitect
                 if File.writable?(output_name) && !(@options[:gzip] && !File.writable?(gzip_output_name))
                   create_output(output_name, sources, file_type)
                 else
-                  puts 'Permission Denied:'.white_on_red + ' ' + output_name.red
-                  puts 'Permission Denied:'.white_on_red + ' ' + gzip_output_name.red if @options[:gzip]
+                  puts_colored 'Permission Denied:' + ' ' + output_name,      :red
+                  puts_colored 'Permission Denied:' + ' ' + gzip_output_name, :red if @options[:gzip]
                 end
               else
-                puts 'Skipping: '.yellow + output_name.yellow
-                puts 'Skipping: '.yellow + gzip_output_name.yellow if @options[:gzip]
+                puts_colored 'Skipping: ' + output_name,      :yellow
+                puts_colored 'Skipping: ' + gzip_output_name, :yellow if @options[:gzip]
               end
             else
               create_output(output_name, sources, file_type)
@@ -135,6 +136,14 @@ module FrontEndArchitect
     end
     
     protected
+    
+    def puts_colored(output, color)
+      if @options[:colored]
+        puts Colored.colorize(output, { :foreground => color })
+      else
+        puts output
+      end
+    end
     
     def flatten_blendfile(value, key=nil, context=[])
       if value.is_a? Hash
@@ -225,7 +234,7 @@ module FrontEndArchitect
         output_file << output
       end
       
-      puts output_name.green
+      puts_colored output_name, :green
       
       if @options[:gzip]
         output_gzip = output_name + '.gz'
@@ -234,12 +243,12 @@ module FrontEndArchitect
           gz.write(output)
         end
         
-        puts output_gzip.green
+        puts_colored output_gzip, :green
       end
     end
     
     def process_css(input_file, output_path)
-      # TODO Move this to a seperate class and clean it up A LOT. For 1.1
+      # TODO Move this to a seperate class and clean it up A LOT. For 2.0
       
       # Determine full path of input file
       input_path    = Pathname.new(File.dirname(input_file))
