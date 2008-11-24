@@ -65,7 +65,7 @@ Other examples:
 To install the RubyGem, run the following at the command line (you may need to use a command such as su or sudo):
   gem install blender
 
-If you're using Windows, you'll also need to run the following:
+If you're using Windows, you'll also want to run the following to get colored command line output:
   gem install win32console
 
 * Java[http://java.com/en/] v1.4 or greater is required
