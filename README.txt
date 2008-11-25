@@ -35,18 +35,22 @@ source files are the hash values as an array. Here is a sample Blendfile:
 == Usage
 
   Usage: blend [options]
-    -h, --help                       Show this message
-    -V, --version                    Prints Blender's version number
-    -g, --generate                   Generate a stub Blendfile
-    -f, --file FILE                  Use given Blendfile
-    -r, --root ROOT                  Specify the path to the web root directory
-    -t, --type TYPE                  Select file type to blend (css, js)
-    -m, --min [MINIFIER]             Select minifier to use (yui, none)
-    -c, --cache-buster [BUSTER]      Append cache busters to URLs in CSS, defaults to timestamps
-        --force                      Force blending when source files aren't newer than output files
-        --yui=YUIOPTS                Pass arguments to YUI Compressor
-    -d, --data                       EXPERIMENTAL Convert url(file.ext) to url(data:) in CSS files
-    -z, --gzip                       EXPERIMENTAL Also create gzip output files
+      -g, --generate                   Generate a stub Blendfile
+      -f, --file FILE                  Use specified Blendfile
+      -r, --root ROOT                  Specify the path to the web root directory
+      -t, --type TYPE                  Select file type to blend (css, js)
+      -m, --min [MINIFIER]             Select minifier to use (yui, none)
+      -c, --cache-buster [BUSTER]      Add cache busters to URLs in CSS
+          --force                      Don't allow output files to be skipped
+          --yui=YUIOPTS                Pass arguments to YUI Compressor
+  
+  Experimental:
+      -d, --data                       Convert url(file.ext) to url(data:) in CSS
+      -z, --gzip                       Additionally generate gzipped output files
+  
+  Meta:
+      -h, --help                       Show this message
+      -V, --version                    Show the version number
 
 == Examples
 

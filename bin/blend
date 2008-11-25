@@ -11,19 +11,28 @@ require 'front_end_architect/blender'
 
 options = {}
 
+def section(opts, title)
+  opts.separator ''
+  opts.separator title + ':'
+end
+
 opts = OptionParser.new do |opts|
-  opts.on('-h',              '--help',                                 "Show this message")                                               {    puts opts; exit 0                                     }
-  opts.on('-V',              '--version',                              "Show the version number")                                         {    puts "Front-End Blender v#{FrontEndArchitect::Blender::VERSION}"; exit 0 }
-  opts.on('-g',              '--generate',              String,        "Generate a stub Blendfile")                                       {    options[:generate]     = true                         }
-  opts.on('-f FILE',         '--file FILE',             String,        "Use given Blendfile")                                             {|f| options[:blendfile]    = f                            }
-  opts.on('-r ROOT',         '--root ROOT',             String,        "Set the path to the web root directory")                          {|r| options[:root]         = r                            }
-  opts.on('-t TYPE',         '--type TYPE',             [:css, :js],   "Select file type to blend (css, js)")                             {|t| options[:file_type]    = t                            }
-  opts.on('-m [MINIFIER]',   '--min [MINIFIER]',        [:yui, :none], "Select minifier to use (yui, none)")                              {|m| options[:min]          = m.nil? ? :none : m.to_sym    }
-  opts.on('-c [BUSTER]',     '--cache-buster [BUSTER]', String,        "Append cache busters to URLs in CSS, defaults to timestamps")     {|b| options[:cache_buster] = b.nil? ? :mtime : b          }
-  opts.on(                   '--force',                 String,        "Force blending when source files aren't newer than output files") {    options[:force]        = true                         }
-  opts.on(                   '--yui=YUIOPTS',           String,        "Pass arguments to YUI Compressor")                                {|o| options[:yuiopts]      = o                            }
-  opts.on('-d',              '--data',                  String,        "EXPERIMENTAL Convert url(file.ext) to url(data:) in CSS files")   {    options[:data]         = true                         }
-  opts.on('-z',              '--gzip',                  String,        "EXPERIMENTAL Also create gzip output files")                      {    options[:gzip]         = true                         }
+  version = "Front-End Blender v#{FrontEndArchitect::Blender::VERSION}"
+  
+  opts.on('-g',            '--generate',              String,        "Generate a stub Blendfile")                  {    options[:generate]     = true                      }
+  opts.on('-f FILE',       '--file FILE',             String,        "Use specified Blendfile")                    {|f| options[:blendfile]    = f                         }
+  opts.on('-r ROOT',       '--root ROOT',             String,        "Specify the path to the web root directory") {|r| options[:root]         = r                         }
+  opts.on('-t TYPE',       '--type TYPE',             [:css, :js],   "Select file type to blend (css, js)")        {|t| options[:file_type]    = t                         }
+  opts.on('-m [MINIFIER]', '--min [MINIFIER]',        [:yui, :none], "Select minifier to use (yui, none)")         {|m| options[:min]          = m.nil? ? :none : m.to_sym }
+  opts.on('-c [BUSTER]',   '--cache-buster [BUSTER]', String,        "Add cache busters to URLs in CSS")           {|b| options[:cache_buster] = b.nil? ? :mtime : b       }
+  opts.on(                 '--force',                 String,        "Don't allow output files to be skipped")     {    options[:force]        = true                      }
+  opts.on(                 '--yui=YUIOPTS',           String,        "Pass arguments to YUI Compressor")           {|o| options[:yuiopts]      = o                         }
+  section opts, 'Experimental'
+  opts.on('-d',            '--data',                  String,        "Convert url(file.ext) to url(data:) in CSS") {    options[:data]         = true                      }
+  opts.on('-z',            '--gzip',                  String,        "Additionally generate gzipped output files") {    options[:gzip]         = true                      }
+  section opts, 'Meta'
+  opts.on('-h',            '--help',                                 "Show this message")                          {    puts opts;    exit 0                               }
+  opts.on('-V',            '--version',                              "Show the version number")                    {    puts version; exit 0                               }
   
   opts.parse!(ARGV) rescue return false
 end
