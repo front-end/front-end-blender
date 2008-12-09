@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{blender}
-  s.version = "0.23"
+  s.version = "0.24"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Blake Elshire", "Chris Griego"]
-  s.date = %q{2008-11-23}
+  s.date = %q{2008-12-08}
   s.default_executable = %q{blend}
   s.description = %q{Blender is like ant or make for the front-end. It aggregates and compresses CSS and/or JavaScript assets for a site into efficient, production-ready files.}
   s.email = %q{blender@front-end-architect.com}

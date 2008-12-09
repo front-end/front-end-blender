@@ -6,29 +6,31 @@
 $:.unshift File.join(File.dirname(File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__), *%w[..])
 
 require 'rubygems'
-require 'yaml'
+
 require 'base64'
 require 'benchmark'
 require 'colored' unless PLATFORM =~ /win32/ && !Gem.available?('win32console')
-require 'mime/types'
 require 'find'
+require 'mime/types'
 require 'pathname'
 require 'zlib'
+require 'yaml'
+
 require 'front_end_architect/hash'
 
 module FrontEndArchitect
   class Blender
-    VERSION = '0.23'
+    VERSION = '0.24'
     
-    FILTER_REGEX = /filter: ?[^?]+\(src=(['"])([^\?'"]+)(\?(?:[^'"]+)?)?\1,[^?]+\1\);/im
-    IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im
+    ALPHA_REGEX  = /(-ms-)?filter:\s*(['"]?)progid:DXImageTransform\.Microsoft\.AlphaImageLoader\(\s*src=(['"])([^\?'"\)]+)(\?(?:[^'"\)]+)?)?\3,\s*sizingMethod=(['"])(image|scale|crop)\6\s*\)\2/im
+    IMPORT_REGEX = /@import(?: url\(| )(['"]?)([^\?'"\)\s]+)(\?(?:[^'"\)]+)?)?\1\)?(?:[^?;]+)?;/im # shouldn't the semicolon be optional?
     URL_REGEX    = /url\((['"]?)([^\?'"\)]+)(\?(?:[^'"\)]+)?)?\1?\)/im
     
     DEFAULT_OPTIONS = {
       :blendfile => 'Blendfile.yaml',
       :data      => false,
       :force     => false,
-      :root      => File.dirname(:blendfile.to_s),
+      :root      => File.dirname('Blendfile.yaml'),
       :min       => :yui,
       :colored   => (Object.const_defined? :Colored),
     }
@@ -220,11 +222,14 @@ module FrontEndArchitect
         if @options[:data]
           if File.extname(output_name).downcase == '.css'
             output = output.gsub(URL_REGEX) do
-              unless $2.downcase.include?('.css')
-                mime_type    = MIME::Types.type_for($2)
-                url_contents = make_data_uri(IO.read($2), mime_type[0])
+              url   = $2
+              query = $3
+              
+              unless url.downcase.include?('.css')
+                mime_type    = MIME::Types.type_for(url)
+                url_contents = make_data_uri(IO.read(url), mime_type[0])
               else
-                url_contents = $2
+                url_contents = url
               end
                 %Q!url(#{url_contents})!
             end
@@ -257,45 +262,50 @@ module FrontEndArchitect
       
       # Find filter statements and append cache busters to URLs
       if @options[:cache_buster]
-        input = input.gsub(FILTER_REGEX) do |filter|
-          uri = $2
-          cbuster = $3
-          unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
-            full_path = File.expand_path($2, File.dirname(input_file))
-            buster    = make_cache_buster(full_path, $3)
-            new_path  = uri.to_s + buster
-            
-            %Q!filter='#{new_path}'!
-          else
-            %Q!filter='#{uri}#{cbuster}'!
+        input = input.gsub(ALPHA_REGEX) do |alpha|
+          prefix       = $1
+          outter_quote = $2
+          inner_quote1 = $3
+          url          = $4
+          query        = $5
+          inner_quote2 = $6
+          sizing       = $7
+          
+          # TODO Rewrite to root relative (if :root specified?)
+          
+          unless url.match(/^(https:\/\/|http:\/\/|\/\/)/i)
+            full_path = File.expand_path(url, File.dirname(input_file))
+            query = make_cache_buster(full_path, query)
           end
+          
+          "#{prefix}filter:#{outter_quote}progid:DXImageTransform.Microsoft.AlphaImageLoader(src=#{inner_quote1}#{url}#{query}#{inner_quote1},sizingMethod=#{inner_quote2}#{sizing}#{inner_quote2})#{outter_quote}"
         end
       end
       
       # Handle @import statements URL rewrite and adding cache busters
       input = input.gsub(IMPORT_REGEX) do |import|
-        uri        = $2
-        asset_path = Pathname.new(File.expand_path(uri, input_path))
+        url        = $2
+        query      = $3
+        asset_path = Pathname.new(File.expand_path(url, input_path))
         
-        if uri.match(/^(\/[^\/]+.+)$/)
-          asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+        if url.match(/^(\/[^\/]+.+)$/)
+          asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), url))
         end
         
-        unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
+        unless url.match(/^(https:\/\/|http:\/\/|\/\/)/i)
           if (output_path != input_path)
-            
             new_path = asset_path.relative_path_from(output_path)
             
             if @options[:cache_buster]
-              buster = make_cache_buster(asset_path, $3)
-              import.gsub!(uri, new_path.to_s+buster)
+              buster = make_cache_buster(asset_path, query)
+              import.gsub!(url, new_path.to_s + buster)
             else
-              import.gsub!(uri, new_path)
+              import.gsub!(url, new_path)
             end
           else
             if @options[:cache_buster]
-              buster = make_cache_buster(asset_path, $3)
-              import.gsub!(uri, asset_path.to_s+buster)
+              buster = make_cache_buster(asset_path, query)
+              import.gsub!(url, asset_path.to_s + buster)
             end
           end
         end
@@ -308,39 +318,39 @@ module FrontEndArchitect
       if output_path == input_path
         if @options[:data]
           input = input.gsub(URL_REGEX) do
-            uri     = $2
-            cbuster = $3
+            url   = $2
+            query = $3
             
-            unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
-              new_path = File.expand_path($2, File.dirname(input_file))
+            unless url.match(/^(https:\/\/|http:\/\/|\/\/)/i)
+              new_path = File.expand_path(url, File.dirname(input_file))
               
-              if uri.match(/^(\/[^\/]+.+)$/)
-                new_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+              if url.match(/^(\/[^\/]+.+)$/)
+                new_path = Pathname.new(File.join(File.expand_path(@options[:root]), url))
               end
               
               %Q!url(#{new_path})!
             else
-              %Q!url(#{uri}#{cbuster})!
+              %Q!url(#{url}#{query})!
             end
           end
         elsif @options[:cache_buster]
           input = input.gsub(URL_REGEX) do
-            unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
-              uri     = $2
-              cbuster = $3
-              
-              if uri.match(/^(\/[^\/]+.+)$/)
-                uri = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+            url   = $2
+            query = $3
+            
+            unless url.match(/^(https:\/\/|http:\/\/|\/\/)/i)
+              if url.match(/^(\/[^\/]+.+)$/)
+                url = Pathname.new(File.join(File.expand_path(@options[:root]), url))
               end
               
               if @options[:cache_buster]
-                buster   = make_cache_buster(uri, $3)
-                new_path = uri.to_s+buster
+                buster   = make_cache_buster(url, query)
+                new_path = url.to_s + buster
               end
               
               %Q!url(#{new_path})!
             else
-              %Q!url(#{uri}#{cbuster})!
+              %Q!url(#{url}#{query})!
             end
           end
         end
@@ -349,37 +359,37 @@ module FrontEndArchitect
       else
         # Find all url(.ext) in file and rewrite relative url from output directory.
         input = input.gsub(URL_REGEX) do
-          uri     = $2
-          cbuster = $3
+          url   = $2
+          query = $3
           
-          unless uri.match(/^(https:\/\/|http:\/\/|\/\/)/i)
+          unless url.match(/^(https:\/\/|http:\/\/|\/\/)/i)
             if @options[:data]
               # if doing data conversion rewrite url as an absolute path
-              new_path = File.expand_path(uri, File.dirname(input_file))
+              new_path = File.expand_path(url, File.dirname(input_file))
               
-              if uri.match(/^(\/[^\/]+.+)$/)
-                new_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+              if url.match(/^(\/[^\/]+.+)$/)
+                new_path = Pathname.new(File.join(File.expand_path(@options[:root]), url))
               end
             else
-              asset_path = Pathname.new(File.expand_path(uri, File.dirname(input_file)))
+              asset_path = Pathname.new(File.expand_path(url, File.dirname(input_file)))
               
-              if uri.match(/^(\/[^\/]+.+)$/)
-                asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), uri))
+              if url.match(/^(\/[^\/]+.+)$/)
+                asset_path = Pathname.new(File.join(File.expand_path(@options[:root]), url))
               end
               
               new_path = asset_path.relative_path_from(output_path)
               
               if @options[:cache_buster]
-                buster   = make_cache_buster(asset_path, $3)
-                new_path = new_path.to_s+buster
+                buster   = make_cache_buster(asset_path, query)
+                new_path = new_path.to_s + buster
               else
-                new_path = new_path.to_s+$3 unless $3.nil?
+                new_path = new_path.to_s + query unless query.nil?
               end
             end
             
             %Q!url(#{new_path})!
           else
-            %Q!url(#{uri}#{cbuster})!
+            %Q!url(#{url}#{query})!
           end
         end
         
@@ -387,18 +397,18 @@ module FrontEndArchitect
       end
     end
     
-    def make_cache_buster(asset_path, query_string)
-      unless query_string.nil?
-        query_string += '&'
+    def make_cache_buster(asset_path, query)
+      unless query.nil?
+        query += '&'
       else
-        query_string = '?'
+        query = '?'
       end
       
       if @options[:cache_buster] == :mtime
         file_mtime = File.mtime(asset_path).to_i
-        buster     = query_string + file_mtime.to_s
+        buster     = query + file_mtime.to_s
       else
-        buster = query_string + @options[:cache_buster]
+        buster = query + @options[:cache_buster]
       end
       
       return buster
